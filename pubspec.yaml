@@ -1,0 +1,68 @@
+name: document_manager
+description: "A new Flutter project."
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.3
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  image_picker: ^1.1.2
+  flutter_svg: ^2.0.13
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
+  share_plus: ^10.1.1
+  path_provider: ^2.1.5
+  flutter_rating_bar: ^4.0.1
+  circular_menu: ^4.0.0
+  flutter_carousel_widget: ^3.1.0
+  carousel_slider: ^5.0.0
+  file_picker: ^5.3.1
+  permission_handler: ^10.4.3
+  speech_to_text: ^7.0.0
+  avatar_glow: ^3.0.1
+  url_launcher: ^6.3.1
+  flutter_slidable: ^3.1.1
+
+#  appbase:
+#    path: D:\Flutter-Project\plugin\appbase
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/document.png"
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/slide/
+
+  # To add assets to your application, add an assets section, like this:
+  # assets:
+  #   - images/a_dot_burr.jpeg
+  #   - images/a_dot_ham.jpeg
+
+
