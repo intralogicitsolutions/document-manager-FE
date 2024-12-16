@@ -66,13 +66,13 @@ class NavBar extends StatelessWidget {
     );
   }
 
-  Widget navItem(IconData icon, bool selected, {Function()? onTap}) {
+  Widget navItem(IconData icon, bool? selected, {Function()? onTap}) {
     return Expanded(
       child: InkWell(
         onTap: onTap,
         child: Icon(
           icon,
-          color: selected ? Colors.white : Colors.white.withOpacity(0.4),
+          color: selected! ? Colors.white : Colors.white.withOpacity(0.4),
         ),
       ),
     );

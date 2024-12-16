@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:circular_menu/circular_menu.dart';
 import '../comms/navBar.dart';
 import '../comms/navModel.dart';
+import '../component/drawer.dart';
 import '../component/searchbar.dart';
 import '../theme/theme.dart';
 import "dart:math" show pi;
@@ -109,35 +110,14 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Themer.gradient1,
         elevation: 0,
         title: isSearching  ?
-        // SizedBox(
-        //   height: 50,
-        //   width: MediaQuery.of(context).size.width,
-        //   child: TextField(
-        //     style: const TextStyle(color: Colors.black),
-        //     controller: searchController,
-        //     // autofocus: true,
-        //     decoration: InputDecoration(
-        //       border: OutlineInputBorder(
-        //         borderRadius: BorderRadius.circular(10.0),
-        //       ),
-        //       filled: true,
-        //       //contentPadding: EdgeInsets.all(16),
-        //       hintText: "Search documents...",
-        //       hintStyle: TextStyle(color: Colors.black),
-        //       prefixIcon: Icon(Icons.search),
-        //
-        //     ),
-        //     onChanged: (value) {},
-        //   ),
-        // )
         Searchbar((type) {
 
         })
             :const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+         // mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.lock, color: Colors.white),
-            SizedBox(width: 8),
+             SizedBox(width: 5),
             Text('Document Manager', style: TextStyle(color: Colors.white)),
           ],
         ),
@@ -159,6 +139,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      drawer: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: CustomDrawer.show(context)),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,6 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
 }
 
 // Slider card widget for PageView

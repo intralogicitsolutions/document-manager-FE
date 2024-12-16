@@ -82,30 +82,39 @@ class _FaqTileState extends State<FaqTile> {
   Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.only(bottom: 8.0),
-      child: ExpansionTile(
-        leading: Icon(Icons.help_outline),
-        title: Text(
-          widget.question,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      elevation: 2,
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent, // Removes the underline effect
         ),
-        trailing: Icon(
-          _isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-          color: Themer.gradient1,
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              widget.answer,
-              style: TextStyle(fontSize: 16, color: Colors.black54),
-            ),
+        child: ExpansionTile(
+          leading: Icon(Icons.help_outline),
+          title: Text(
+            widget.question,
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-        ],
-        onExpansionChanged: (bool expanded) {
-          setState(() {
-            _isExpanded = expanded;
-          });
-        },
+          trailing: Icon(
+            _isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+            color: Themer.gradient1,
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                widget.answer,
+                style: TextStyle(fontSize: 16, color: Colors.black54),
+              ),
+            ),
+          ],
+          onExpansionChanged: (bool expanded) {
+            setState(() {
+              _isExpanded = expanded;
+            });
+          },
+        ),
       ),
     );
   }

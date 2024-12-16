@@ -3,6 +3,8 @@ import 'package:document_manager/screen/onboardingScreen.dart';
 import 'package:document_manager/screen/splashScreen.dart';
 import 'package:flutter/material.dart';
 
+import 'comms/helper.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -20,7 +22,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Document Manager',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
@@ -29,6 +31,7 @@ class _MyAppState extends State<MyApp> {
       darkTheme: ThemeData.dark(),
       themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
       initialRoute: '/',
+     // routes: Helper.routes,
       routes: {
         '/': (context) => OnboardingScreen(),
         '/home': (context) => SplashScreen(), // Define your main screen here

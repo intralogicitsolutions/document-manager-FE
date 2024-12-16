@@ -7,8 +7,6 @@ import '../comms/navModel.dart';
 import '../component/drawer.dart';
 import '../theme/theme.dart';
 
-
-
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -29,25 +27,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   bool _isFabClicked = false;
 
-
   final List<Map<String, String>> documents = [
-    {"type": "DOC", "name": "Travel.docx", "uploadTime": "12/10/2024", "fileSize":"10mb"},
-    {"type": "PDF", "name": "Document.pdf", "uploadTime": "12/10/2024", "fileSize":"10mb"},
-    {"type": "PDF", "name": "dashboard.pdf", "uploadTime": "12/10/2024", "fileSize":"10mb"},
-    {"type": "PDF", "name": "data.pdf", "uploadTime": "12/10/2024", "fileSize":"10mb"},
-    {"type": "PDF", "name": "other.pdf", "uploadTime": "12/10/2024", "fileSize":"10mb"},
-    {"type": "PDF", "name": "abc.pdf", "uploadTime": "12/10/2024", "fileSize":"10mb"},
-    {"type": "PDF", "name": "xyz.pdf", "uploadTime": "12/10/2024", "fileSize":"10mb"},
-    {"type": "PDF", "name": "intralogic.pdf", "uploadTime": "12/10/2024", "fileSize":"10mb"},
-    {"type": "DOC", "name": "flutter.docx", "uploadTime": "12/10/2024", "fileSize":"10mb"},
-    {"type": "DOC", "name": "dart.docx", "uploadTime": "12/10/2024", "fileSize":"10mb"},
+    {
+      "type": "DOC",
+      "name": "Travel.docx",
+      "uploadTime": "12/10/2024",
+      "fileSize": "10mb"
+    },
+    {
+      "type": "PDF",
+      "name": "Document.pdf",
+      "uploadTime": "12/10/2024",
+      "fileSize": "10mb"
+    },
+    {
+      "type": "PDF",
+      "name": "dashboard.pdf",
+      "uploadTime": "12/10/2024",
+      "fileSize": "10mb"
+    },
+    {
+      "type": "PDF",
+      "name": "data.pdf",
+      "uploadTime": "12/10/2024",
+      "fileSize": "10mb"
+    },
+    {
+      "type": "PDF",
+      "name": "other.pdf",
+      "uploadTime": "12/10/2024",
+      "fileSize": "10mb"
+    },
+    {
+      "type": "PDF",
+      "name": "abc.pdf",
+      "uploadTime": "12/10/2024",
+      "fileSize": "10mb"
+    },
+    {
+      "type": "PDF",
+      "name": "xyz.pdf",
+      "uploadTime": "12/10/2024",
+      "fileSize": "10mb"
+    },
+    {
+      "type": "PDF",
+      "name": "intralogic.pdf",
+      "uploadTime": "12/10/2024",
+      "fileSize": "10mb"
+    },
+    {
+      "type": "DOC",
+      "name": "flutter.docx",
+      "uploadTime": "12/10/2024",
+      "fileSize": "10mb"
+    },
+    {
+      "type": "DOC",
+      "name": "dart.docx",
+      "uploadTime": "12/10/2024",
+      "fileSize": "10mb"
+    },
   ];
 
-  bool isSearching  = false;
+  bool isSearching = false;
   String searchQuery = "";
   final TextEditingController searchController = TextEditingController();
-
-
 
   @override
   void initState() {
@@ -74,11 +119,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void _sortDocuments() {
     setState(() {
       if (selectedSortOption == "A-Z") {
-        filteredDocuments.sort((a, b) => a["name"]!.toLowerCase().compareTo(b["name"]!.toLowerCase()));
+        filteredDocuments.sort((a, b) =>
+            a["name"]!.toLowerCase().compareTo(b["name"]!.toLowerCase()));
       } else if (selectedSortOption == "Z-A") {
-        filteredDocuments.sort((a, b) => b["name"]!.toLowerCase().compareTo(a["name"]!.toLowerCase()));
+        filteredDocuments.sort((a, b) =>
+            b["name"]!.toLowerCase().compareTo(a["name"]!.toLowerCase()));
       } else if (selectedSortOption == "Type") {
-        filteredDocuments.sort((a, b) => a["type"]!.toLowerCase().compareTo(b["type"]!.toLowerCase()));
+        filteredDocuments.sort((a, b) =>
+            a["type"]!.toLowerCase().compareTo(b["type"]!.toLowerCase()));
       } else {
         // Default is "Last Added" (original order)
         filteredDocuments = List.from(documents);
@@ -94,21 +142,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             Padding(
-              padding:  EdgeInsets.only(left: 40.0, right: 20.0, top: 10),
+            Padding(
+              padding: EdgeInsets.only(left: 40.0, right: 20.0, top: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Shorting List', style: TextStyle(fontSize: 20),),
+                  Text(
+                    'Shorting List',
+                    style: TextStyle(fontSize: 20),
+                  ),
                   IconButton(
-                      onPressed:() {
+                      onPressed: () {
                         Navigator.pop(context);
                       },
-                      icon:  Icon(Icons.close))
+                      icon: Icon(Icons.close))
                 ],
               ),
             ),
-            SizedBox(height: 10,),
+            SizedBox(
+              height: 10,
+            ),
             RadioListTile<String>(
               title: const Text("Last Added"),
               value: "Last Added",
@@ -169,22 +222,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         iconTheme: IconThemeData(color: Colors.white),
         backgroundColor: Themer.gradient1,
-        title: isSearching  ?
-        TextField(
-          style: const TextStyle(color: Themer.white),
-          controller: searchController,
-         // autofocus: true,
-          decoration: InputDecoration(
-            hintText: "Search documents...",
-            hintStyle: TextStyle(color: Themer.white),
-            border: InputBorder.none,
-          ),
-          onChanged: (value) => _filterDocuments(value),
-        )
-        :const Text("All Documents", style: TextStyle(color: Themer.white),),
+        title: isSearching
+            ? TextField(
+                style: const TextStyle(color: Themer.white),
+                controller: searchController,
+                // autofocus: true,
+                decoration: InputDecoration(
+                  hintText: "Search documents...",
+                  hintStyle: TextStyle(color: Themer.white),
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) => _filterDocuments(value),
+              )
+            : const Text(
+                "All Documents",
+                style: TextStyle(color: Themer.white),
+              ),
         actions: [
           IconButton(
-            icon: Icon(isSearching  ? Icons.close : Icons.search,color: Themer.white,),
+            icon: Icon(
+              isSearching ? Icons.close : Icons.search,
+              color: Themer.white,
+            ),
             onPressed: () {
               setState(() {
                 isSearching = !isSearching;
@@ -192,7 +251,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 // _filterDocuments();
                 if (!isSearching) {
                   searchQuery = "";
-                  filteredDocuments = List.from(documents); // Reset to all documents
+                  filteredDocuments =
+                      List.from(documents); // Reset to all documents
                   _sortDocuments();
                 }
               });
@@ -200,7 +260,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           IconButton(
             icon: Icon(Icons.filter_list),
-            onPressed:  _showSortOptions,
+            onPressed: _showSortOptions,
             color: Themer.white,
           ),
         ],
@@ -211,7 +271,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: Stack(
         children: [
           Container(
-            decoration:  BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
                   // Color(0xFFF67DBC), // Pinkish color
@@ -232,29 +292,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Row(
                     children: ["all", "pdf", "doc", "img", "ppt", "txt"]
                         .map((filter) => Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                      child: FilterChip(
-                        label: Text(filter.toUpperCase(),
-                          style: TextStyle(
-                            color: selectedFilter == filter ? Colors.white : Colors.black,
-                          ),
-                        ),
-                        selected: selectedFilter == filter,
-                        selectedColor: Themer.gradient1,
-                        checkmarkColor: Themer.white,
-                        onSelected: (isSelected) {
-                          setState(() {
-                            selectedFilter = isSelected ? filter : "all";
-                            _filterDocuments(searchQuery);
-                          });
-                        },
-                      ),
-                    ))
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4.0),
+                              child: FilterChip(
+                                label: Text(
+                                  filter.toUpperCase(),
+                                  style: TextStyle(
+                                    color: selectedFilter == filter
+                                        ? Colors.white
+                                        : Colors.black,
+                                  ),
+                                ),
+                                selected: selectedFilter == filter,
+                                selectedColor: Themer.gradient1,
+                                checkmarkColor: Themer.white,
+                                onSelected: (isSelected) {
+                                  setState(() {
+                                    selectedFilter =
+                                        isSelected ? filter : "all";
+                                    _filterDocuments(searchQuery);
+                                  });
+                                },
+                              ),
+                            ))
                         .toList(),
                   ),
                 ),
 
-               Expanded(
+                Expanded(
                   child: ListView.builder(
                     itemCount: filteredDocuments.length,
                     itemBuilder: (context, index) {
@@ -265,68 +330,74 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       }
 
                       return Padding(
-                        padding: const EdgeInsets.only(top: 4.0, bottom: 4.0, right: 10, left: 10),
+                        padding: const EdgeInsets.only(
+                            top: 4.0, bottom: 4.0, right: 10, left: 10),
                         child: Slidable(
-                          endActionPane: ActionPane(
-                              motion: BehindMotion(),
-                              children: [
-                                SlidableAction(
-                                  onPressed: (context) {
-                                    Helper.showDeleteDialog(context);
-                                  },
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
-                                  icon: Icons.delete,
-                                  padding: EdgeInsets.symmetric(horizontal: 2),
-                                  label: 'Delete',
-                                ),
-
-                                SlidableAction(
-                                  onPressed: (context) {
-                                    Helper.showRenameDialog(context);
-                                  },
-                                  backgroundColor: Colors.blue,
-                                  foregroundColor: Colors.white,
-                                  icon: Icons.edit,
-                                  padding: EdgeInsets.symmetric(horizontal: 2),
-                                  label: 'Rename',
-                                ),
-                                SlidableAction(
-                                  onPressed: (context) {
-                                    Helper.shareDocument();
-                                  },
-                                  backgroundColor: Colors.green,
-                                  foregroundColor: Colors.white,
-                                  icon: Icons.share,
-                                  padding: EdgeInsets.symmetric(horizontal: 2),
-                                  label: 'Share',
-                                ),
-                              ]
-                          ),
+                          endActionPane:
+                              ActionPane(motion: BehindMotion(), children: [
+                            SlidableAction(
+                              onPressed: (context) {
+                                Helper.showDeleteDialog(context);
+                              },
+                              backgroundColor: Colors.red.shade300,
+                              foregroundColor: Colors.white,
+                              icon: Icons.delete,
+                              padding: EdgeInsets.symmetric(horizontal: 2),
+                              //label: 'Delete',
+                            ),
+                            SlidableAction(
+                              onPressed: (context) {
+                                Helper.showRenameDialog(context);
+                              },
+                              backgroundColor: Themer.gradient1,
+                              foregroundColor: Colors.white,
+                              icon: Icons.edit,
+                              padding: EdgeInsets.symmetric(horizontal: 2),
+                              //label: 'Rename',
+                            ),
+                            SlidableAction(
+                              onPressed: (context) {
+                                Helper.shareDocument();
+                              },
+                              backgroundColor: Colors.green.shade400,
+                              foregroundColor: Colors.white,
+                              icon: Icons.share,
+                              padding: EdgeInsets.symmetric(horizontal: 2),
+                              //label: 'Share',
+                            ),
+                          ]),
                           child: Card(
                             child: ListTile(
                               leading: Icon(
                                 document["type"] == "PDF"
                                     ? Icons.picture_as_pdf
                                     : Icons.insert_drive_file,
-                                color: document["type"] == "PDF" ? Colors.red : Colors.blue,
+                                color: document["type"] == "PDF"
+                                    ? Colors.red
+                                    : Colors.blue,
                                 size: 40,
                               ),
                               title: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(document["name"]!),
-                                  SizedBox(height: 5,),
+                                  SizedBox(
+                                    height: 5,
+                                  ),
                                   Row(
                                     children: [
                                       Text(
                                         "${document["uploadTime"]}",
-                                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                        style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 14),
                                       ),
                                       const SizedBox(width: 12),
                                       Text(
                                         "${document["fileSize"]}",
-                                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                        style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 14),
                                       ),
                                     ],
                                   ),
@@ -347,11 +418,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
           ),
+
         ],
       ),
     );
   }
 }
-
-
-

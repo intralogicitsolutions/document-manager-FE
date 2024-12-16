@@ -1,9 +1,55 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../screen/aboutUs.dart';
+import '../screen/contactProfile.dart';
+import '../screen/dashboard.dart';
+import '../screen/delete_account_page.dart';
+import '../screen/faqs.dart';
+import '../screen/feedback.dart';
+import '../screen/folderDetail.dart';
+import '../screen/folderPage.dart';
+import '../screen/forgotPassword.dart';
+import '../screen/homePageSlide.dart';
+import '../screen/homeScreen.dart';
+import '../screen/homeTabPage.dart';
+import '../screen/login.dart';
+import '../screen/notificationPage.dart';
+import '../screen/onboardingScreen.dart';
+import '../screen/otpVerification.dart';
+import '../screen/privacyPolicy.dart';
+import '../screen/profilePage.dart';
+import '../screen/resetPassword.dart';
+import '../screen/setting.dart';
+import '../theme/theme.dart';
+
 class Helper{
+
+  static Map<String, StatefulWidget Function(BuildContext)> routes = {
+    "login": (BuildContext) => Login(),
+    "forgot_password": (BuildContext) => ForgotPasswordPage(),
+    "reset_password": (BuildContext) => ResetPasswordPage(),
+    "dashboard": (BuildContext) => DashboardScreen(),
+    "home": (BuildContext) => HomeScreen(),
+    "notification_list": (BuildContext) => NotificationPage(),
+    "profile": (BuildContext) => ProfilePage(),
+    "about_us": (BuildContext) => AboutUsPage(),
+    "contact_profile": (BuildContext) => ContactProfilePage(),
+    "delete_account": (BuildContext) => DeleteAccountPage(),
+    "faqs": (BuildContext) => FaqPage(),
+    "feedback": (BuildContext) => RatingReviewPage(),
+    "folder_detail": (BuildContext) => FolderDetailPage(),
+    "folder": (BuildContext) => FolderPage(),
+    "homepage_slide": (BuildContext) => HomePageSlides(),
+    "home_tab": (BuildContext) => HomeTabPage(),
+    "onboarding": (BuildContext) => OnboardingScreen(),
+    "otp_verification": (BuildContext) => OtpVerification(),
+    "privacy_policy": (BuildContext) => PrivacyPolicyPage(),
+    "setting": (BuildContext) => SettingsPage(),
+  };
 
   static  void showBottomSheet(BuildContext context) {
     showModalBottomSheet(
@@ -56,6 +102,7 @@ class Helper{
       },
     );
   }
+
   static void showDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -132,5 +179,98 @@ class Helper{
       print('Error sharing document: $e');
     }
   }
+
+  static var bottom_nav_selected = 0;
+
+  static BottomNavigationBar getBottomBar(
+      void Function(int index) bottomClick){
+    return BottomNavigationBar(
+      backgroundColor: Colors.white,
+      selectedItemColor: Themer.gradient1,
+      currentIndex: bottom_nav_selected,
+      type: BottomNavigationBarType.fixed,
+      onTap: bottomClick,
+      items: [
+        BottomNavigationBarItem(
+          icon: SvgPicture.asset('assets/images/round-home-24px.svg'),
+          activeIcon: SvgPicture.asset(
+            'assets/images/round-home-24px.svg',
+            //color: Themer.textGreenColor,
+            colorFilter: ColorFilter.mode(Themer.gradient1, BlendMode.srcIn),
+          ),
+          label: 'Home',
+        ),
+        BottomNavigationBarItem(
+            icon: SvgPicture.asset('assets/images/round-work-24px.svg'),
+            activeIcon: SvgPicture.asset(
+              'assets/images/round-work-24px.svg',
+              //color: Themer.textGreenColor,
+              colorFilter: ColorFilter.mode(Themer.gradient1, BlendMode.srcIn),
+            ),
+            label: 'docs'),
+        BottomNavigationBarItem(
+            icon: SvgPicture.asset('assets/images/edit_tm.svg'),
+            activeIcon: SvgPicture.asset(
+              'assets/images/edit_tm.svg',
+              //color: Themer.textGreenColor,
+              colorFilter: ColorFilter.mode(Themer.gradient1, BlendMode.srcIn),
+            ),
+            label: 'Notification'),
+        BottomNavigationBarItem(
+            icon: SvgPicture.asset('assets/images/round-send-24px.svg'),
+            activeIcon: SvgPicture.asset(
+              'assets/images/round-send-24px.svg',
+              //color: Themer.textGreenColor,
+              colorFilter: ColorFilter.mode(Themer.gradient1, BlendMode.srcIn),
+            ),
+            label: 'profile'),
+      ],
+    );
+  }
+
+  static void bottomClickAction(int index, BuildContext context, Function updateState){
+    if (index == bottom_nav_selected && 1 == 2) return;
+
+    updateState((){
+      bottom_nav_selected = index;
+    });
+
+    switch (index){
+      case 0:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(),  // Replace `DashboardPage` with your actual page widget
+          ),
+        );
+        break;
+      case 1:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DashboardScreen(),  // Replace `DashboardPage` with your actual page widget
+          ),
+        );
+        break;
+      case 2:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NotificationPage(),  // Replace `DashboardPage` with your actual page widget
+          ),
+        );
+        break;
+      case 3:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProfilePage(),  // Replace `DashboardPage` with your actual page widget
+          ),
+        );
+        break;
+      default:
+    }
+  }
 }
+
 

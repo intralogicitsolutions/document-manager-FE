@@ -60,15 +60,18 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           ListTile(
             title: Text('Enable Dark Mode', style: TextStyle(color: Themer.textColor , fontSize: 18),),
-            trailing: Switch(
-              value: _isDarkMode,
-              onChanged: (value) {
-                setState(() {
-                  _isDarkMode = value;
-                  _saveThemePreference(value);
-                  _toggleTheme();
-                });
-              },
+            trailing: SizedBox(
+              width: 30,
+              child: Switch(
+                value: _isDarkMode,
+                onChanged: (value) {
+                  setState(() {
+                    _isDarkMode = value;
+                    _saveThemePreference(value);
+                    _toggleTheme();
+                  });
+                },
+              ),
             ),
           ),
           Divider(),

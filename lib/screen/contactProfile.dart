@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../theme/theme.dart';
 
-class ContactProfilePage extends StatelessWidget {
+class ContactProfilePage extends StatefulWidget {
+  @override
+  State<ContactProfilePage> createState() => _ContactProfilePageState();
+}
+
+class _ContactProfilePageState extends State<ContactProfilePage> {
   Widget contactInfoRow(String label, String info) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -61,7 +66,7 @@ class ContactProfilePage extends StatelessWidget {
               color: Themer.gradient1,
               child: Column(
                 children: [
-                  SizedBox(height: 20),
+                 SizedBox(height: 10),
                   Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: CircleAvatar(
@@ -74,13 +79,7 @@ class ContactProfilePage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                    ],
-                  ),
-                  SizedBox(height: 20),
+
                 ],
               ),
             ),
@@ -104,6 +103,7 @@ class ContactProfilePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -151,6 +151,17 @@ class ContactProfilePage extends StatelessWidget {
                     contactInfoRow("Social", "IntraLogic itSolutions"),
                     SizedBox(height: 20,),
                     Divider(),
+                    Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Text(
+                        '© 2024 IntraLogic itSolutions. All rights reserved.',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ],
                 ),
               ),

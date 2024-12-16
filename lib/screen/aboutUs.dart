@@ -4,9 +4,14 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/theme.dart';
 import 'contactProfile.dart';
 
-class AboutUsPage extends StatelessWidget {
+class AboutUsPage extends StatefulWidget {
   const AboutUsPage({super.key});
 
+  @override
+  State<AboutUsPage> createState() => _AboutUsPageState();
+}
+
+class _AboutUsPageState extends State<AboutUsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,9 +41,9 @@ class AboutUsPage extends StatelessWidget {
             _buildContactInfo(),
             SizedBox(height: 20),
             _buildSocialLinks(),
-            SizedBox(height: 20),
+            SizedBox(height: 10),
             _buildVersionInfo(),
-            SizedBox(height: 40),
+            SizedBox(height: 20),
             _buildCallToAction(context),
           ],
         ),
@@ -70,7 +75,7 @@ class AboutUsPage extends StatelessWidget {
     return Text(
       'The Document Manager app is a powerful tool designed to help users efficiently organize, manage, and access documents on their devices. With features like quick search, document categorization, and sharing options, it provides a seamless experience for managing your files.',
       style: TextStyle(fontSize: 16, color: Colors.black87),
-      textAlign: TextAlign.center,
+      textAlign: TextAlign.justify,
     );
   }
 
@@ -87,6 +92,7 @@ class AboutUsPage extends StatelessWidget {
         Text(
           'Our team at XYZ Tech is dedicated to building intuitive and user-friendly tools for managing digital content. With years of experience in app development, we strive to provide our users with seamless and efficient solutions.',
           style: TextStyle(fontSize: 16, color: Colors.black87),
+          textAlign: TextAlign.justify,
         ),
       ],
     );

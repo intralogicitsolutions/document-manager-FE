@@ -46,38 +46,13 @@ class _NotificationPageState extends State<NotificationPage> {
       appBar: AppBar(
         backgroundColor: Themer.gradient1,
         elevation: 0,
-        title: isSearching  ?
-        // SizedBox(
-        //   height: 50,
-        //   width: MediaQuery.of(context).size.width,
-        //   child: TextField(
-        //     style: const TextStyle(color: Colors.black),
-        //     controller: searchController,
-        //     // autofocus: true,
-        //     decoration: InputDecoration(
-        //       border: OutlineInputBorder(
-        //         borderRadius: BorderRadius.circular(10.0),
-        //       ),
-        //       filled: true,
-        //       //contentPadding: EdgeInsets.all(16),
-        //       hintText: "Search documents...",
-        //       hintStyle: TextStyle(color: Colors.black),
-        //       prefixIcon: Icon(Icons.search),
-        //
-        //     ),
-        //     onChanged: (value) {},
-        //   ),
-        // )
-        Searchbar((type) {
+        title: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: isSearching  ?
+          Searchbar((type) {
 
-        })
-            :const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.lock, color: Colors.white),
-            SizedBox(width: 8),
-            Text('Document Manager', style: TextStyle(color: Colors.white)),
-          ],
+          })
+              :Text('Notification', style: TextStyle(color: Colors.white)),
         ),
         actions: [
           IconButton(
@@ -105,12 +80,18 @@ class _NotificationPageState extends State<NotificationPage> {
             margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
             elevation: 5,
             child: ListTile(
-              leading: Icon(Icons.circle_notifications_rounded, color: Themer.gradient1,size: 28,),
+              leading: Icon(Icons.circle_notifications_rounded, color: Themer.gradient1,size: 34,),
               title: Text(
                 notification['title']!,
                 style: TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
-              subtitle: Text(notification['body']!),
+              subtitle: Text(
+                notification['body']!,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
               trailing: Text(
                 notification['time']!,
                 style: TextStyle(color: Colors.grey),

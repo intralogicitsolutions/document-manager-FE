@@ -100,7 +100,7 @@ class _SearchbarState extends State<Searchbar> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 50,
+      height: 40,
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.black12, width: 1.0),
@@ -118,31 +118,37 @@ class _SearchbarState extends State<Searchbar> {
                 hintStyle: const TextStyle(color: Colors.black54),
                 prefixIcon: _speechEnabled
                     ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 20, // Width for mic icon space
-                      child: _showMicIcon
-                          ? const Icon(
-                        Icons.mic_none,
-                        color: Colors.redAccent,
-                      )
-                          : const SizedBox.shrink(), // Invisible placeholder
-                    ),
-                    SizedBox(width: 5,),
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: Text(
-                        _formatDuration(_recordingDuration),
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          flex: 1,
+                          child: SizedBox(
+                            width: 20, // Width for mic icon space
+                            child: _showMicIcon
+                                ? const Icon(
+                                    Icons.mic_none,
+                                    color: Colors.redAccent,
+                                  )
+                                : const SizedBox
+                                    .shrink(), // Invisible placeholder
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
-                )
+                        SizedBox(
+                          width: 5,
+                        ),
+                        // Padding(
+                        //   padding: const EdgeInsets.only(right: 8.0),
+                        //   child: Text(
+                        //     _formatDuration(_recordingDuration),
+                        //     style: const TextStyle(
+                        //       color: Colors.grey,
+                        //       fontWeight: FontWeight.bold,
+                        //       fontSize: 16,
+                        //     ),
+                        //   ),
+                        // ),
+                      ],
+                    )
                     : const Icon(Icons.search, color: Colors.black54),
                 border: InputBorder.none,
               ),
@@ -151,10 +157,12 @@ class _SearchbarState extends State<Searchbar> {
           ),
           GestureDetector(
             onLongPressStart: (_) async {
-              bool hasPermission = await Permission.microphone.request().isGranted;
+              bool hasPermission =
+                  await Permission.microphone.request().isGranted;
               if (hasPermission) {
                 if (Platform.isIOS) {
-                  bool speechPermissionGranted = await Permission.speech.request().isGranted;
+                  bool speechPermissionGranted =
+                      await Permission.speech.request().isGranted;
                   if (speechPermissionGranted) {
                     _startRecording();
                   }
@@ -191,7 +199,8 @@ class _SearchbarState extends State<Searchbar> {
                 if (_speechEnabled)
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Icon(Icons.arrow_back_ios_new_rounded, size: 15, color: Colors.grey),
+                    child: Icon(Icons.arrow_back_ios_new_rounded,
+                        size: 15, color: Colors.grey),
                   ),
                 if (_speechEnabled)
                   Padding(
@@ -212,13 +221,15 @@ class _SearchbarState extends State<Searchbar> {
                       glowRadiusFactor: 0.7,
                       glowCount: 3,
                       animate: _speechEnabled,
-                      glowColor: Themer.gradient1,
+                      glowColor:
+                          _speechEnabled ? Themer.gradient1 : Themer.white,
                       duration: const Duration(milliseconds: 2000),
                       repeat: true,
                       glowShape: BoxShape.circle,
                       curve: Curves.fastOutSlowIn,
                       child: Transform.translate(
-                        offset: Offset(_micIconPosition, 0), // Apply the swipe position
+                        offset: Offset(_micIconPosition, 0),
+                        // Apply the swipe position
                         child: Icon(
                           _speechEnabled ? Icons.mic : Icons.mic_none,
                           color: Colors.black87,
@@ -235,16 +246,6 @@ class _SearchbarState extends State<Searchbar> {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
 
 // import 'dart:io';
 //

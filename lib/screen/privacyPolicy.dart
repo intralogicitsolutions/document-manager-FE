@@ -3,9 +3,14 @@ import 'package:flutter_svg/svg.dart';
 
 import '../theme/theme.dart';
 
-class PrivacyPolicyPage extends StatelessWidget {
+class PrivacyPolicyPage extends StatefulWidget {
   const PrivacyPolicyPage({super.key});
 
+  @override
+  State<PrivacyPolicyPage> createState() => _PrivacyPolicyPageState();
+}
+
+class _PrivacyPolicyPageState extends State<PrivacyPolicyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,6 +46,7 @@ class PrivacyPolicyPage extends StatelessWidget {
 
               // Introduction Section
               Text(
+                textAlign: TextAlign.justify,
                 'At Our App, we value your privacy and are committed to protecting your personal data. This privacy policy outlines how we collect, use, and safeguard your information when you use our app.',
                 style: TextStyle(fontSize: 16, color: Colors.black87),
               ),
@@ -54,6 +60,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               ),
               SizedBox(height: 10),
               Text(
+                textAlign: TextAlign.justify,
                 'We may collect personal information such as your name, email address, and documents uploaded to the app. This information helps us provide a better experience for you.',
                 style: TextStyle(fontSize: 16, color: Colors.black87),
               ),
@@ -67,6 +74,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               ),
               SizedBox(height: 10),
               Text(
+                textAlign: TextAlign.justify,
                 'Your information will be used solely for the purpose of enhancing your experience within the app. We do not share your information with third parties unless required by law.',
                 style: TextStyle(fontSize: 16, color: Colors.black87),
               ),
@@ -80,6 +88,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               ),
               SizedBox(height: 10),
               Text(
+                textAlign: TextAlign.justify,
                 'We take reasonable precautions to ensure the security of your data. However, no system is completely secure, and we cannot guarantee the security of your data transmitted over the internet.',
                 style: TextStyle(fontSize: 16, color: Colors.black87),
               ),
@@ -93,6 +102,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               ),
               SizedBox(height: 10),
               Text(
+                textAlign: TextAlign.justify,
                 'If you have any questions or concerns about this privacy policy, please contact us at support@documentmanager.com.',
                 style: TextStyle(fontSize: 16, color: Colors.black87),
               ),
@@ -100,6 +110,7 @@ class PrivacyPolicyPage extends StatelessWidget {
 
               // Footer or Last Section
               Text(
+                textAlign: TextAlign.justify,
                 'By using our app, you agree to the terms and conditions outlined in this privacy policy.',
                 style: TextStyle(fontSize: 16, color: Colors.black87),
               ),

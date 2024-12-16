@@ -111,45 +111,43 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
         ),
         elevation: 0,
       ),
-      body: Center(
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: "Email",
-                    border: OutlineInputBorder(),
+      body: Container(
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: "Email",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 20),
+              TextField(
+                controller: _reasonController,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  labelText: "Reason for delete account",
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _showDeleteConfirmationDialog,
+                  child: Text(
+                    "Submit",
+                    style: TextStyle(fontSize: 18, color: Themer.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Themer.buttonColor.withOpacity(0.2),
+                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   ),
                 ),
-                SizedBox(height: 20),
-                TextField(
-                  controller: _reasonController,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    labelText: "Reason for delete account",
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Center(
-                  child: ElevatedButton(
-                    onPressed: _showDeleteConfirmationDialog,
-                    child: Text(
-                      "Submit",
-                      style: TextStyle(fontSize: 18, color: Themer.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Themer.buttonColor.withOpacity(0.2),
-                      padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                    ),
-                  ),
-                )
-              ],
-            ),
+              )
+            ],
           ),
         ),
       ),

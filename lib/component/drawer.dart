@@ -65,10 +65,20 @@ class CustomDrawer {
                                       : Icon(Icons.person, color: Colors.grey, size: 60),
                                 ),
                                 Positioned(
-                                  bottom: -9,
-                                  right: -9,
+                                  bottom: -13,
+                                  right: -13,
                                   child: IconButton(
-                                    icon: Icon(Icons.edit,size: 15,color: Colors.grey.shade600,),
+                                    icon: Icon(Icons.circle,size: 26,color: Colors.black26,),
+                                    onPressed: () {
+
+                                    },
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: -13,
+                                  right: -13,
+                                  child: IconButton(
+                                    icon: Icon(Icons.edit,size: 15,color: Colors.white,),
                                     onPressed: () {
 
                                     },
@@ -99,7 +109,7 @@ class CustomDrawer {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => FolderPage()),
+                          MaterialPageRoute(builder: (context) => const FolderPage()),
                         );
                       },
                     ),

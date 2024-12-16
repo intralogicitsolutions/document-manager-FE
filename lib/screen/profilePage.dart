@@ -17,7 +17,7 @@ class _ProfilePageState extends State<ProfilePage> {
   TextEditingController _firstNameController = TextEditingController();
   TextEditingController _lastNameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
-  String _profilePicUrl = ''; // URL or file path for profile picture
+  String _profilePicUrl = '';
 
   // Pick profile picture from gallery or camera
   Future<void> _pickProfilePic() async {
@@ -54,7 +54,10 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         backgroundColor: Themer.gradient1,
         elevation: 0,
-        title: Text('Profile', style: TextStyle(color: Colors.white)),
+        title: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text('Profile', style: TextStyle(color: Colors.white)),
+        ),
         // centerTitle: true,
         // leading: IconButton(onPressed: () {
         //   Navigator.pop(context);
@@ -84,9 +87,13 @@ class _ProfilePageState extends State<ProfilePage> {
                     Positioned(
                       bottom: 0,
                       right: 0,
-                      child: IconButton(
-                        icon: Icon(Icons.edit,size: 25,color: Colors.grey.shade600,),
-                        onPressed: _pickProfilePic,
+                      child: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: Colors.black12,
+                        child: IconButton(
+                          icon: Icon(Icons.edit,size: 18,color: Colors.grey.shade600,),
+                          onPressed: _pickProfilePic,
+                        ),
                       ),
                     ),
                   ],

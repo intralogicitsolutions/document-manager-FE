@@ -72,7 +72,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
               child: Form(
                 key: _formKey,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     TextFormField(
                       // decoration: const InputDecoration(
