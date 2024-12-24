@@ -14,7 +14,9 @@ import "dart:math" show pi;
 import 'dashboard.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final bool? isSearching;
+  const HomeScreen({super.key,
+    this.isSearching});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -105,43 +107,45 @@ class _HomeScreenState extends State<HomeScreen> {
       //     ),
       //   ],
       // ),
-      appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
-        backgroundColor: Themer.gradient1,
-        elevation: 0,
-        title: isSearching  ?
-        Searchbar((type) {
 
-        })
-            :const Row(
-         // mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.lock, color: Colors.white),
-             SizedBox(width: 5),
-            Text('Document Manager', style: TextStyle(color: Colors.white)),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(isSearching  ? Icons.close : Icons.search,color: Themer.white,),
-            onPressed: () {
-              setState(() {
-                isSearching = !isSearching;
-                // searchController.clear();
-                // _filterDocuments();
-                if (!isSearching) {
-                  searchQuery = "";
-                  // filteredDocuments = List.from(documents); // Reset to all documents
-                  // _sortDocuments();
-                }
-              });
-            },
-          ),
-        ],
-      ),
-      drawer: SizedBox(
-          height: MediaQuery.of(context).size.height,
-          child: CustomDrawer.show(context)),
+      // appBar: AppBar(
+      //   iconTheme: IconThemeData(color: Colors.white),
+      //   backgroundColor: Themer.gradient1,
+      //   elevation: 0,
+      //   title: isSearching  ?
+      //   Searchbar((type) {
+      //
+      //   })
+      //       :const Row(
+      //    // mainAxisAlignment: MainAxisAlignment.center,
+      //     children: [
+      //       Icon(Icons.lock, color: Colors.white),
+      //        SizedBox(width: 5),
+      //       Text('Document Manager', style: TextStyle(color: Colors.white)),
+      //     ],
+      //   ),
+      //   actions: [
+      //     IconButton(
+      //       icon: Icon(isSearching  ? Icons.close : Icons.search,color: Themer.white,),
+      //       onPressed: () {
+      //         setState(() {
+      //           isSearching = !isSearching;
+      //           // searchController.clear();
+      //           // _filterDocuments();
+      //           if (!isSearching) {
+      //             searchQuery = "";
+      //             // filteredDocuments = List.from(documents); // Reset to all documents
+      //             // _sortDocuments();
+      //           }
+      //         });
+      //       },
+      //     ),
+      //   ],
+      // ),
+      // drawer: SizedBox(
+      //     height: MediaQuery.of(context).size.height,
+      //     child: CustomDrawer.show(context)),
+
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

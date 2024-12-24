@@ -100,7 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     filteredDocuments = List.from(documents);
   }
 
-  void _filterDocuments(String query) {
+  void filterDocuments(String query) {
     setState(() {
       searchQuery = query;
       filteredDocuments = documents.where((document) {
@@ -113,6 +113,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }).toList();
 
       _sortDocuments(); // Apply the selected sort after filtering
+    });
+  }
+
+  void toggleSearch() {
+    setState(() {
+      isSearching = !isSearching;
+      if (!isSearching) {
+        searchController.clear();
+        filteredDocuments = List.from(documents);
+      }
     });
   }
 
@@ -134,7 +144,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  void _showSortOptions() {
+  void showSortOptions() {
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -219,55 +229,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        iconTheme: IconThemeData(color: Colors.white),
-        backgroundColor: Themer.gradient1,
-        title: isSearching
-            ? TextField(
-                style: const TextStyle(color: Themer.white),
-                controller: searchController,
-                // autofocus: true,
-                decoration: InputDecoration(
-                  hintText: "Search documents...",
-                  hintStyle: TextStyle(color: Themer.white),
-                  border: InputBorder.none,
-                ),
-                onChanged: (value) => _filterDocuments(value),
-              )
-            : const Text(
-                "All Documents",
-                style: TextStyle(color: Themer.white),
-              ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              isSearching ? Icons.close : Icons.search,
-              color: Themer.white,
-            ),
-            onPressed: () {
-              setState(() {
-                isSearching = !isSearching;
-                // searchController.clear();
-                // _filterDocuments();
-                if (!isSearching) {
-                  searchQuery = "";
-                  filteredDocuments =
-                      List.from(documents); // Reset to all documents
-                  _sortDocuments();
-                }
-              });
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.filter_list),
-            onPressed: _showSortOptions,
-            color: Themer.white,
-          ),
-        ],
-      ),
-      drawer: SizedBox(
-          height: MediaQuery.of(context).size.height,
-          child: CustomDrawer.show(context)),
+      // appBar: AppBar(
+      //   iconTheme: IconThemeData(color: Colors.white),
+      //   backgroundColor: Themer.gradient1,
+      //   title: isSearching
+      //       ? TextField(
+      //           style: const TextStyle(color: Themer.white),
+      //           controller: searchController,
+      //           // autofocus: true,
+      //           decoration: InputDecoration(
+      //             hintText: "Search documents...",
+      //             hintStyle: TextStyle(color: Themer.white),
+      //             border: InputBorder.none,
+      //           ),
+      //           onChanged: (value) => _filterDocuments(value),
+      //         )
+      //       : const Text(
+      //           "All Documents",
+      //           style: TextStyle(color: Themer.white),
+      //         ),
+      //   actions: [
+      //     IconButton(
+      //       icon: Icon(
+      //         isSearching ? Icons.close : Icons.search,
+      //         color: Themer.white,
+      //       ),
+      //       onPressed: () {
+      //         setState(() {
+      //           isSearching = !isSearching;
+      //           // searchController.clear();
+      //           // _filterDocuments();
+      //           if (!isSearching) {
+      //             searchQuery = "";
+      //             filteredDocuments =
+      //                 List.from(documents); // Reset to all documents
+      //             _sortDocuments();
+      //           }
+      //         });
+      //       },
+      //     ),
+      //     IconButton(
+      //       icon: Icon(Icons.filter_list),
+      //       onPressed: _showSortOptions,
+      //       color: Themer.white,
+      //     ),
+      //   ],
+      // ),
+
+
+      // appBar: Helper.getAppBar(
+      //     context,title: 'All Document',
+      //     isSearching: isSearching,
+      //     onSearchChanged: filterDocuments,
+      //   onSearchToggle: toggleSearch,
+      //   showSortOptions: showSortOptions,
+      //     searchController: searchController,
+      // ),
+      // drawer: SizedBox(
+      //     height: MediaQuery.of(context).size.height,
+      //     child: CustomDrawer.show(context)),
+
+
       body: Stack(
         children: [
           Container(
@@ -310,7 +332,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   setState(() {
                                     selectedFilter =
                                         isSelected ? filter : "all";
-                                    _filterDocuments(searchQuery);
+                                    filterDocuments(searchQuery);
                                   });
                                 },
                               ),
@@ -403,9 +425,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                 ],
                               ),
-                              trailing: Icon(Icons.more_vert),
+                              trailing: IconButton(
+                                onPressed: () {
+                                  Helper.showBottomSheet(context);
+                                },
+                                  icon: Icon(Icons.more_vert),),
                               onTap: () {
-                                Helper.showBottomSheet(context);
+                                //Helper.showBottomSheet(context);
                                 // Handle document selection
                               },
                             ),

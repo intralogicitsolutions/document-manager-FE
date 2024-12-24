@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:document_manager/comms/helper.dart';
 import 'package:document_manager/screen/profilePage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -13,25 +14,38 @@ import '../comms/navModel.dart';
 import '../component/drawer.dart';
 import '../component/searchbar.dart';
 import '../theme/theme.dart';
-import "dart:math" show pi;
+import "dart:math" show cos, pi, sin;
 
 import 'dashboard.dart';
 import 'homeScreen.dart';
 import 'notificationPage.dart';
 
 class HomeTabPage extends StatefulWidget {
-  const HomeTabPage({super.key});
+  final void Function(String)? onSearchChanged;
+  final VoidCallback? onSearchToggle;
+  final VoidCallback? onShowSortOptions;
+  final TextEditingController? searchController;
+  const HomeTabPage({
+    Key? key,
+     this.onSearchChanged,
+     this.onSearchToggle,
+    this.onShowSortOptions,
+    this.searchController,
+  }) : super(key: key);
 
   @override
   State<HomeTabPage> createState() => _HomeTabPageState();
 }
 
-class _HomeTabPageState extends State<HomeTabPage> {
+class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStateMixin{
   int selectedTab = 0;
-  GlobalKey<ScaffoldState> _drawerKey = GlobalKey();
-  GlobalKey<CircularMenuState>? key;
+  // GlobalKey<ScaffoldState> _drawerKey = GlobalKey();
+  final GlobalKey<CircularMenuState> _menuKey = GlobalKey<CircularMenuState>();
   bool isMenuOpen = false;
   File? image;
+  late AnimationController _controller;
+  // final GlobalKey _key = GlobalKey();
+
 
   final List<NavModel> items = [
     NavModel(page: HomeScreen(), navKey: GlobalKey<NavigatorState>()),
@@ -52,13 +66,19 @@ class _HomeTabPageState extends State<HomeTabPage> {
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _pageController = PageController();
     _requestPermissions();
+
   }
 
   @override
   void dispose() {
     _pageController?.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -66,6 +86,7 @@ class _HomeTabPageState extends State<HomeTabPage> {
     // index == 1 ? _drawerKey.currentState?.openDrawer():
     setState(() {
       selectedTab = index;
+      print('selected tab ==> ${selectedTab}');
     });
     _pageController?.jumpToPage(index);
   }
@@ -126,203 +147,187 @@ class _HomeTabPageState extends State<HomeTabPage> {
     }
   }
 
+
+  // void _toggleMenu() {
+  //   setState(() {
+  //     isMenuOpen = !isMenuOpen;
+  //   });
+  // }
+
   void _toggleMenu() {
     setState(() {
       isMenuOpen = !isMenuOpen;
     });
+    if (isMenuOpen) {
+      _controller.forward();
+    } else {
+      _controller.reverse();
+    }
+  }
+
+  void _handleTapOutside() {
+    if (isMenuOpen) {
+      _toggleMenu();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    print('selected ==> ${selectedTab}');
     return Scaffold(
-      key: _drawerKey,
-     // appBar: selectedTab == 1 ? AppBar(title: Text('Al Documents'),): null,
+      appBar: selectedTab == 0 || selectedTab == 1 ? Helper.getAppBar(
+          context,
+        title: selectedTab == 1 ? 'All Document' : 'Document Manager',
+        showIcon: selectedTab == 0 ? true : false,
+        icon: selectedTab == 0 ? Icons.lock : null,
+        onSearchChanged: widget.onSearchChanged,
+        onSearchToggle: widget.onSearchToggle,
+        showSortOptions: widget.onShowSortOptions,
+        searchController: widget.searchController,
+        shortingList: selectedTab == 1 ? true : false
+      ): null,
+      drawer: SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: CustomDrawer.show(context)),
+     // key: _drawerKey,
+    //  appBar: selectedTab == 1 ? AppBar(title: Text('Al Documents'),): null,
+    //   drawer: SizedBox(
+    // height: MediaQuery.of(context).size.height,
+    // child: CustomDrawer.show(context)),
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          PageView(
-            controller: _pageController,
-            physics: const NeverScrollableScrollPhysics(),
-            children: items.map((item) => item.page).toList(),
-          ),
-          Positioned(
-            bottom: 0.0,
-            left: 0.0,
-            right: 0.0,
-              child: NavBar(
-                pageIndex: selectedTab,
-                onTap: onTabSelected,
-              ),
-          ),
-          Align(
-            // bottom: 70.0,
-            // left: MediaQuery.of(context).size.width / 2 - 32,
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(30.0),
-              child: CircularMenu(
-                toggleButtonSize: 30,
-                toggleButtonPadding: 10,
-                toggleButtonColor: Themer.gradient1,
-                toggleButtonAnimatedIconData: !isMenuOpen? AnimatedIcons.add_event : AnimatedIcons.menu_close,
-                toggleButtonMargin: 10,
-                alignment: Alignment.bottomCenter,
-                startingAngleInRadian: 1.10 * pi,
-                endingAngleInRadian: 1.90 * pi,
-                toggleButtonBoxShadow: [
-                  BoxShadow(
-                      color: Colors.white.withOpacity(0.9),
-                    blurRadius: 8,
-                    spreadRadius: 2
-                  )
-                ],
-                key: key,
-                items: [
-                  CircularMenuItem(
-                    padding: 7,
-                    margin: 7,
-                    icon: Icons.picture_as_pdf,
-                    onTap: () {
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _handleTapOutside,
 
-                    },
-                    color: Colors.green,
-                    iconColor: Colors.white,
+        child: Stack(
+          children: [
+            PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              children: items.map((item) => item.page).toList(),
+            ),
+            Positioned(
+              bottom: 0.0,
+              left: 0.0,
+              right: 0.0,
+                child: NavBar(
+                  pageIndex: selectedTab,
+                  //onTap: onTabSelected,
+                  onTap: (p0) {
+                    onTabSelected(p0);
+                    _handleTapOutside();
+                  },
+                ),
+            ),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color:  Colors.white.withOpacity(0.9),
+                        spreadRadius: 4,
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
-                  CircularMenuItem(
-                    padding: 7,
-                    margin: 7,
-                    icon: Icons.camera_alt,
-                    onTap: () { _pickImage(ImageSource.camera);},
-                    color: Colors.orange,
-                    iconColor: Colors.white,
+                  child: FloatingActionButton(
+                    backgroundColor: Themer.gradient1,
+                    shape: CircleBorder(),
+                    onPressed: _toggleMenu,
+                    child: AnimatedIcon(
+                      icon: isMenuOpen
+                          ? AnimatedIcons.menu_close
+                          : AnimatedIcons.add_event,
+                      progress: _controller,
+                      color: Colors.white,
+                    ),
                   ),
-                  CircularMenuItem(
-                    padding: 7,
-                    margin: 7,
-                    icon: Icons.photo,
-                    onTap: () { _pickImage(ImageSource.gallery);},
-                    color: Colors.deepPurple,
-                    iconColor: Colors.white,
-                  ),
-                  CircularMenuItem(
-                    padding: 7,
-                    margin: 7,
-                    icon: Icons.insert_drive_file,
-                    onTap: _pickDocument,
-                    color: Colors.pink,
-                    iconColor: Colors.white,
-                  ),
-                ],
-                toggleButtonOnPressed: _toggleMenu,
-
+                ),
               ),
             ),
-          ),
 
-        ],
+            // The CircularMenu items will be shown here when the menu is open
+            if (isMenuOpen)
+              Positioned.fill(
+                 bottom: -100,
+                // right: 50,
+                child: Stack(
+                  children: List.generate(4, (index) {
+                    //final angle = index * (pi / 5);
+                    final angle = pi / 4 * (index - 1.5);
+                    final radius = 90.0;
+                    final xPosition = radius  * sin(angle);
+                    final yPosition = radius  * cos(angle);
+
+                    return Positioned(
+                      //bottom: yPosition,
+                      bottom: 150 + yPosition,
+                      left: (screenWidth / 2) + xPosition - 25,
+                     // right: xPosition,
+                      child: CircularMenuItem(
+                        icon: [
+                          Icons.picture_as_pdf,
+                          Icons.camera_alt,
+                          Icons.photo,
+                          Icons.insert_drive_file,
+                        ][index],
+                        color: [
+                          Colors.green,
+                          Colors.orange,
+                          Colors.deepPurple,
+                          Colors.pink,
+                        ][index],
+                        onTap: () {
+                          // Define onTap action for each menu item
+                          if (index == 1) {
+                            _pickImage(ImageSource.camera);
+                          } else if (index == 2) {
+                            _pickImage(ImageSource.gallery);
+                          } else if (index == 3) {
+                            _pickDocument();
+                          }
+                        },
+                      ),
+                    );
+                  }),
+                ),
+              ),
+          ],
+        ),
       ),
-      //floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      // floatingActionButton: Visibility(
-      //   visible: MediaQuery.of(context).viewInsets.bottom == 0.0,
-      //   child: Padding(
-      //     padding: const EdgeInsets.only(bottom: 5, left: 8, right: 8),
-      //     child: Material(
-      //       //color: Colors.purple,
-      //       shape: RoundedRectangleBorder(
-      //         side: const BorderSide(width: 3, color: Themer.gradient1),
-      //         borderRadius: BorderRadius.circular(100),
-      //       ),
-      //       elevation: 10,
-      //       // shadowColor: Colors.purple,
-      //       child: Container(
-      //         height: 64.0,
-      //         width: 64.0,
-      //         child: FloatingActionButton(
-      //           shape: RoundedRectangleBorder(
-      //             side: const BorderSide(width: 3, color: Themer.gradient1),
-      //             borderRadius: BorderRadius.circular(100),
-      //           ),
-      //           backgroundColor: Themer.gradient1,
-      //           onPressed: () {
-      //             _toggleMenu;
-      //           },
-      //           //  child: const Icon(Icons.add, color: Themer.white,size: 26,),
-      //           child: CircularMenu(
-      //             toggleButtonSize: 25,
-      //             toggleButtonPadding: 10,
-      //             toggleButtonColor: Themer.gradient1,
-      //             toggleButtonAnimatedIconData: !isMenuOpen? AnimatedIcons.add_event : AnimatedIcons.menu_close,
-      //             toggleButtonMargin: 10,
-      //             alignment: Alignment.bottomCenter,
-      //             startingAngleInRadian: 1.10 * pi,
-      //             endingAngleInRadian: 1.90 * pi,
-      //             key: key,
-      //             items: [
-      //               CircularMenuItem(
-      //                 padding: 7,
-      //                 margin: 7,
-      //                 icon: Icons.picture_as_pdf,
-      //                 onTap: () {
-      //                   print('pdf click');
-      //                 },
-      //                 color: Colors.green,
-      //                 iconColor: Colors.white,
-      //               ),
-      //               CircularMenuItem(
-      //                 padding: 7,
-      //                 margin: 7,
-      //                 icon: Icons.camera_alt,
-      //                 onTap: () => pickImage,
-      //                 color: Colors.orange,
-      //                 iconColor: Colors.white,
-      //               ),
-      //               CircularMenuItem(
-      //                 padding: 7,
-      //                 margin: 7,
-      //                 icon: Icons.photo,
-      //                 onTap: () { _pickImage(ImageSource.gallery);},
-      //                 color: Colors.deepPurple,
-      //                 iconColor: Colors.white,
-      //               ),
-      //               CircularMenuItem(
-      //                 padding: 7,
-      //                 margin: 7,
-      //                 icon: Icons.insert_drive_file,
-      //                 onTap: _pickDocument,
-      //                 color: Colors.pink,
-      //                 iconColor: Colors.white,
-      //               ),
-      //             ],
-      //             toggleButtonOnPressed: _toggleMenu,
-      //           ),
-      //         ),
-      //       ),
-      //     ),
-      //   ),
-      // ),
-      // bottomNavigationBar: NavBar(
-      //   pageIndex: selectedTab,
-      //   onTap: onTabSelected,
-      // ),
     );
   }
 }
 
 
-class HalfCircleClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final Path path = Path();
-    path.addArc(
-      Rect.fromLTWH(0, size.height / 2, size.width, size.height), // Half-circle
-      pi, // Start angle
-      pi, // Sweep angle
-    );
-    return path;
-  }
+class CircularMenuItem extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color color;
+
+  const CircularMenuItem({Key? key, required this.icon, required this.onTap, required this.color})
+      : super(key: key);
 
   @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) {
-    return false;
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Material(
+        shape: CircleBorder(),
+        elevation: 5,
+        shadowColor: color,
+        child: CircleAvatar(
+          backgroundColor: color,
+          child: Icon(icon, color: Colors.white),
+        ),
+      ),
+    );
   }
-  }
+}
+
+

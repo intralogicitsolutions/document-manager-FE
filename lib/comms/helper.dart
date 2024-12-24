@@ -240,7 +240,7 @@ class Helper{
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => HomeScreen(),  // Replace `DashboardPage` with your actual page widget
+            builder: (context) => HomeScreen(),
           ),
         );
         break;
@@ -248,7 +248,7 @@ class Helper{
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => DashboardScreen(),  // Replace `DashboardPage` with your actual page widget
+            builder: (context) => DashboardScreen(),
           ),
         );
         break;
@@ -256,7 +256,7 @@ class Helper{
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => NotificationPage(),  // Replace `DashboardPage` with your actual page widget
+            builder: (context) => NotificationPage(),
           ),
         );
         break;
@@ -264,12 +264,74 @@ class Helper{
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => ProfilePage(),  // Replace `DashboardPage` with your actual page widget
+            builder: (context) => ProfilePage(),
           ),
         );
         break;
       default:
     }
+  }
+
+  static AppBar getAppBar(BuildContext context,
+  {
+    String title = "",
+    bool? showIcon = false,
+    bool shortingList = false,
+    Widget? actions = null,
+    bool isSearching = false,
+    TextEditingController? searchController,
+    void Function(String)? onSearchChanged,
+    VoidCallback? onSearchToggle,
+    VoidCallback? showSortOptions,
+    IconData? icon,
+  }){
+    return AppBar(
+      iconTheme: IconThemeData(color: Colors.white),
+      // leading: drawer ?
+      // Visibility(
+      //     child: IconButton(onPressed: () {},
+      //         icon: Icon(Icons.list))
+      // ): null,
+      backgroundColor: Themer.gradient1,
+      title: isSearching ?
+      TextField(
+        style: const TextStyle(color: Themer.white),
+        controller: searchController,
+        // autofocus: true,
+        decoration: InputDecoration(
+          hintText: "Search documents...",
+          hintStyle: TextStyle(color: Themer.white),
+          border: InputBorder.none,
+        ),
+        onChanged: onSearchChanged,
+      ):
+      Row(
+        children: [
+          if(showIcon == true)...[
+            Icon(icon, color: Colors.white),
+            SizedBox(width: 5),
+          ],
+          // Icon(icon, color: Colors.white),
+          // SizedBox(width: 5),
+          Text(title,  style: TextStyle(color: Themer.white),),
+        ],
+      ),
+      actions: <Widget>[
+        IconButton(
+          icon: Icon(
+            isSearching ? Icons.close : Icons.search,
+            color: Themer.white,
+          ),
+          onPressed: onSearchToggle,
+        ),
+        shortingList == true ?
+        IconButton(
+          icon: Icon(Icons.filter_list, color: Themer.white,),
+          onPressed: showSortOptions,
+        ): SizedBox(),
+        if (actions != null) actions
+      ],
+    );
   }
 }
 

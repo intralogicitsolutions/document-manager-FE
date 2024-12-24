@@ -79,7 +79,6 @@ class _ContactProfilePageState extends State<ContactProfilePage> {
                       ),
                     ),
                   ),
-
                 ],
               ),
             ),
@@ -152,7 +151,7 @@ class _ContactProfilePageState extends State<ContactProfilePage> {
                     SizedBox(height: 20,),
                     Divider(),
                     Padding(
-                      padding: const EdgeInsets.all(10.0),
+                      padding: const EdgeInsets.only(top: 15.0, left: 10.0, right: 10.0),
                       child: Text(
                         '© 2024 IntraLogic itSolutions. All rights reserved.',
                         style: TextStyle(
