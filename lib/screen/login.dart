@@ -841,7 +841,7 @@ class _LoginFormState extends State<LoginForm> {
         print('token :: $token');
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const HomeTabPage()),
         );
       } else {
         showDialog(
@@ -981,15 +981,15 @@ class _LoginFormState extends State<LoginForm> {
               width: 130,
               child: ElevatedButton(
                 onPressed: () {
-                  // if (widget.isLogin) {
-                  //   handleSignin(_emailController.text, _passwordController.text);
-                  // } else {
-                  //   handleSignup();
-                  // }
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeTabPage()),
-                  );
+                  if (widget.isLogin) {
+                    handleSignin(_emailController.text, _passwordController.text);
+                  } else {
+                    handleSignup();
+                  }
+                  // Navigator.pushReplacement(
+                  //   context,
+                  //   MaterialPageRoute(builder: (context) => const HomeTabPage()),
+                  // );
                 },
                 child: Text(
                   widget.isLogin ? 'LOGIN' : 'SIGN UP',

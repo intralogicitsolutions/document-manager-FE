@@ -1,4 +1,7 @@
+import 'package:appbase/base/base_widget.dart';
+import 'package:document_manager/viewmodel/contactprofile_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/theme.dart';
 
@@ -7,8 +10,10 @@ class ContactProfilePage extends StatefulWidget {
   State<ContactProfilePage> createState() => _ContactProfilePageState();
 }
 
-class _ContactProfilePageState extends State<ContactProfilePage> {
-  Widget contactInfoRow(String label, String info) {
+class _ContactProfilePageState extends BaseWidget<ContactProfilePage, ContactProfileViewModel> {
+  late ContactProfileViewModel vm;
+
+  Widget contactInfoRow(String label, Widget info, {void Function()? onTap}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -25,23 +30,29 @@ class _ContactProfilePageState extends State<ContactProfilePage> {
           ),
           Expanded(
             flex: 3,
-            child: Text(
-              info,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
-              textAlign: TextAlign.left,
-            ),
+            child: GestureDetector(
+              onTap: onTap,
+                child: info),
           ),
         ],
       ),
     );
   }
 
+  Future<void> _launchURL(String url) async {
+    final  uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      throw 'Could not launch $uri';
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget buildContent(BuildContext context, ContactProfileViewModel baseNotifier) {
+
+    vm = baseNotifier;
+
     return Scaffold(
         appBar: AppBar(
         backgroundColor: Themer.gradient1,
@@ -109,25 +120,33 @@ class _ContactProfilePageState extends State<ContactProfilePage> {
                         CircleAvatar(
                           radius: 25,
                           backgroundColor: Themer.gradient1,
-                          child: Icon(
-                            Icons.call,
-                            color: Themer.white,
+                          child: IconButton(
+                            icon: Icon(Icons.call,
+                              color: Themer.white,),
+                            onPressed: () {
+                              vm.makeCall("1234567890");
+                            },
                           ),
                         ),
                         CircleAvatar(
                           radius: 25,
                           backgroundColor: Themer.gradient1,
-                          child: Icon(
-                            Icons.chat,
-                            color:  Themer.white,
+                          child: IconButton(
+                            icon: Icon(Icons.chat,color:  Themer.white,),
+                            onPressed: () {
+                             vm.openMessenger();
+                            },
                           ),
                         ),
                         CircleAvatar(
                           radius: 25,
                           backgroundColor: Themer.gradient1,
-                          child: Icon(
-                            Icons.email,
-                            color:  Themer.white,
+                          child: IconButton(
+                            icon: Icon(Icons.email,
+                              color:  Themer.white,),
+                            onPressed: () {
+                              vm.sendEmail();
+                            },
                           ),
                         ),
                       ],
@@ -144,11 +163,45 @@ class _ContactProfilePageState extends State<ContactProfilePage> {
                       ),
                     ),
                     SizedBox(height: 16),
-                    contactInfoRow("Website", "www.documentmanager.co.in"),
-                    contactInfoRow("Email", "support@documentmanager.com"),
-                    contactInfoRow("Phone", "+91 1234567890"),
-                    contactInfoRow("Social", "IntraLogic itSolutions"),
-                    SizedBox(height: 20,),
+                    contactInfoRow("Website", Text(
+                      "www.documentmanager.co.in", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87,), textAlign: TextAlign.left,),
+                        onTap: () {
+                      _launchURL("https://www.documentmanager.co.in");
+                    }),
+                    contactInfoRow("Email", Text(
+                      "support@documentmanager.com", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87,), textAlign: TextAlign.left,),
+                        onTap: () {
+                      _launchURL("mailto:support@documentmanager.com");
+                    }),
+                    contactInfoRow("Phone", Text(
+                      "+91 1234567890", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black87,), textAlign: TextAlign.left,),
+                        onTap: () {
+                      _launchURL("tel:+911234567890");
+                    }),
+                    contactInfoRow("Social", Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.facebook, color: Themer.gradient1),
+                          onPressed: () {
+                            // Open Facebook
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.language, color: Themer.gradient1),
+                          onPressed: () {
+                            // Open Twitter
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.facebook, color: Themer.gradient1),
+                          onPressed: () {
+                            // Open LinkedIn
+                          },
+                        ),
+                      ],
+                    )
+                    ),
+                   // SizedBox(height: 20,),
                     Divider(),
                     Padding(
                       padding: const EdgeInsets.only(top: 15.0, left: 10.0, right: 10.0),

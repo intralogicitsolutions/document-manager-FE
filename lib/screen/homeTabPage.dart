@@ -1,7 +1,10 @@
 import 'dart:io';
 
+import 'package:appbase/base/base_widget.dart';
+import 'package:dio/dio.dart';
 import 'package:document_manager/comms/helper.dart';
 import 'package:document_manager/screen/profilePage.dart';
+import 'package:document_manager/viewmodel/dashboard_viewmodel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -13,6 +16,7 @@ import '../comms/navBar.dart';
 import '../comms/navModel.dart';
 import '../component/drawer.dart';
 import '../component/searchbar.dart';
+import '../global/global.dart';
 import '../theme/theme.dart';
 import "dart:math" show cos, pi, sin;
 
@@ -37,7 +41,9 @@ class HomeTabPage extends StatefulWidget {
   State<HomeTabPage> createState() => _HomeTabPageState();
 }
 
-class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStateMixin{
+class _HomeTabPageState extends BaseWidget<HomeTabPage, DashBoardViewModel> with SingleTickerProviderStateMixin{
+  late DashBoardViewModel vm;
+
   int selectedTab = 0;
   // GlobalKey<ScaffoldState> _drawerKey = GlobalKey();
   final GlobalKey<CircularMenuState> _menuKey = GlobalKey<CircularMenuState>();
@@ -134,17 +140,59 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
     }
   }
 
-  Future<void> _pickDocument() async {
+  Future<void> _pickDocument(BuildContext context) async {
     try {
-      final FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf', 'doc', 'docx']);
+      final FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'],
+      );
+
       if (result != null) {
         final String? filePath = result.files.single.path;
-        print('Picked document: $filePath');
-        // You can handle the selected document here
+        if (filePath != null) {
+          final file = File(filePath);
+
+          // Upload document
+          final response = await _uploadDocument(file);
+
+          if (response != null) {
+            // Notify dashboard to refresh the document list
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Document uploaded successfully!")),
+            );
+
+            // Navigate to the dashboard or refresh state
+            Navigator.pushNamed(context, '/dashboard');
+          }
+        }
       }
     } catch (e) {
       print("Error picking document: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error picking or uploading document")),
+      );
     }
+  }
+
+  Future<Map<String, dynamic>?> _uploadDocument(File file) async {
+    try {
+      final dio = Dio();
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(file.path, filename: file.path.split('/').last),
+      });
+
+      final response = await dio.post(
+        Global.BASE_URL + 'documents/upload',
+        data: formData,
+      );
+
+      if (response.statusCode == 200) {
+        return response.data; // API response data
+      }
+    } catch (e) {
+      print("Error uploading document: $e");
+    }
+    return null;
   }
 
 
@@ -172,29 +220,29 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildContent(BuildContext context, DashBoardViewModel baseNotifier) {
+
+    vm = baseNotifier;
+
     final screenWidth = MediaQuery.of(context).size.width;
     print('selected ==> ${selectedTab}');
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: selectedTab == 0 || selectedTab == 1 ? Helper.getAppBar(
           context,
-        title: selectedTab == 1 ? 'All Document' : 'Document Manager',
+        title: selectedTab == 1 ? 'All Documents' : 'Document Manager',
         showIcon: selectedTab == 0 ? true : false,
         icon: selectedTab == 0 ? Icons.lock : null,
-        onSearchChanged: widget.onSearchChanged,
-        onSearchToggle: widget.onSearchToggle,
-        showSortOptions: widget.onShowSortOptions,
-        searchController: widget.searchController,
+        onSearchChanged: vm.doSearch,
+          isSearching: vm.isSearching,
+        onSearchToggle: vm.toggleSearch,
+        showSortOptions: vm.showSortOptions,
+        searchController: vm.searchController,
         shortingList: selectedTab == 1 ? true : false
       ): null,
       drawer: SizedBox(
           height: MediaQuery.of(context).size.height,
           child: CustomDrawer.show(context)),
-     // key: _drawerKey,
-    //  appBar: selectedTab == 1 ? AppBar(title: Text('Al Documents'),): null,
-    //   drawer: SizedBox(
-    // height: MediaQuery.of(context).size.height,
-    // child: CustomDrawer.show(context)),
       backgroundColor: Colors.white,
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -289,7 +337,7 @@ class _HomeTabPageState extends State<HomeTabPage> with SingleTickerProviderStat
                           } else if (index == 2) {
                             _pickImage(ImageSource.gallery);
                           } else if (index == 3) {
-                            _pickDocument();
+                            _pickDocument(context);
                           }
                         },
                       ),

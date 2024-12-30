@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
-
+import 'package:http/http.dart' as http;
+import '../global/global.dart';
 import '../screen/aboutUs.dart';
 import '../screen/contactProfile.dart';
 import '../screen/dashboard.dart';
@@ -51,7 +54,7 @@ class Helper{
     "setting": (BuildContext) => SettingsPage(),
   };
 
-  static  void showBottomSheet(BuildContext context) {
+  static  void showBottomSheet(BuildContext context, Uint8List bytes) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -78,7 +81,7 @@ class Helper{
               title: Text('Delete'),
               onTap: () {
                 Navigator.pop(context); // Close the bottom sheet
-                showDeleteDialog(context);
+                showDeleteDialog(context,'');
               },
             ),
             ListTile(
@@ -86,7 +89,7 @@ class Helper{
               title: Text('Rename'),
               onTap: () {
                 Navigator.pop(context); // Close the bottom sheet
-                showRenameDialog(context);
+                showRenameDialog(context,'','');
               },
             ),
             ListTile(
@@ -94,7 +97,7 @@ class Helper{
               title: Text('Share'),
               onTap: () {
                 Navigator.pop(context); // Close the bottom sheet
-                shareDocument();
+                shareDocument('', bytes);
               },
             ),
           ],
@@ -103,7 +106,83 @@ class Helper{
     );
   }
 
-  static void showDeleteDialog(BuildContext context) {
+  static void deleteDocument(String docId, BuildContext context) async {
+    print('delete document id ==> ${docId}');
+    final url = Global.BASE_URL +'documents/files/$docId';
+    try {
+      final response = await http.delete(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        // Success
+        final responseBody = json.decode(response.body);
+        if (responseBody["message"] == "File deleted successfully") {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('File deleted successfully'),
+            ));
+          }
+        }
+      } else {
+        // Handle failure
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Failed to delete file'),
+          ));
+        }
+      }
+    } catch (e) {
+      // Handle error
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('An error occurred while deleting the file'),
+        ));
+      }
+    }
+  }
+
+  static void renameDocument(String fileName, String newFilename, BuildContext context) async {
+    final url = Global.BASE_URL + 'documents/files/$fileName';
+    final body = json.encode({
+      "newFilename": newFilename,
+    });
+
+    try {
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        final responseBody = json.decode(response.body);
+        print('response body ==> ${responseBody}');
+        if (responseBody["message"] == "File renamed successfully") {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('File renamed successfully'),
+            ));
+          }
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Failed to rename file'),
+          ));
+        }
+      }
+    } catch (e) {
+      // Handle error
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('An error occurred while renaming the file'),
+        ));
+      }
+      }
+  }
+
+
+  static void showDeleteDialog(BuildContext context, String? docId) {
+    print('showDeleteDialog id ==> ${docId}');
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -119,8 +198,10 @@ class Helper{
             ),
             TextButton(
               onPressed: () {
+                print('document id ============> ${docId}');
                 Navigator.pop(context); // Close the dialog
-                // Perform the delete action here
+                // Call the delete function with the filename
+                deleteDocument(docId!, context);
               },
               child: Text('Delete'),
             ),
@@ -130,8 +211,10 @@ class Helper{
     );
   }
 
-  static void showRenameDialog(BuildContext context) {
-    TextEditingController _controller = TextEditingController();
+
+  static void showRenameDialog(BuildContext context,
+      String? fileName, String? currentFilename) {
+    TextEditingController _controller = TextEditingController(text: currentFilename);
 
     showDialog(
       context: context,
@@ -153,7 +236,14 @@ class Helper{
               onPressed: () {
                 Navigator.pop(context); // Close the dialog
                 String newName = _controller.text;
-                // Perform the rename action here with the new name
+                if(newName.isNotEmpty){
+                  renameDocument(fileName!, newName, context);
+                }else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text('New file name cannot be empty'),
+                  ));
+                }
+
               },
               child: Text('Rename'),
             ),
@@ -163,10 +253,10 @@ class Helper{
     );
   }
 
-  static shareDocument() async {
+  static shareDocument(String? originalName, Uint8List bytes) async {
     final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/temp_image.png');
-    // await tempFile.writeAsBytes(bytes);
+    final tempFile = File('${tempDir.path}/$originalName');
+    await tempFile.writeAsBytes(bytes);
      final XFile xFile = XFile(tempFile.path);
 
     // // Get the file path (this is just an example, update it to your actual file path)
@@ -174,7 +264,13 @@ class Helper{
 
     // Share the file using share_plus
     try {
-      await Share.shareXFiles([xFile], text: 'Check out this document!');
+      if (Platform.isAndroid) {
+        await Share.shareXFiles([xFile], text: 'Check out this document!');
+      } else if (Platform.isIOS) {
+        final uri = Uri.file(tempFile.path);
+        await Share.shareUri(uri,);
+      }
+     // await Share.shareXFiles([xFile], text: 'Check out this document!');
     } catch (e) {
       print('Error sharing document: $e');
     }
@@ -313,7 +409,7 @@ class Helper{
           ],
           // Icon(icon, color: Colors.white),
           // SizedBox(width: 5),
-          Text(title,  style: TextStyle(color: Themer.white),),
+          Text(title,  style: TextStyle(color: Themer.white,fontSize: 20),),
         ],
       ),
       actions: <Widget>[

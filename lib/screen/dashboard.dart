@@ -1,10 +1,18 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
+import 'package:appbase/base/base_widget.dart';
+import 'package:dio/dio.dart';
 import 'package:document_manager/comms/helper.dart';
+import 'package:document_manager/viewmodel/dashboard_viewmodel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import '../comms/navBar.dart';
+import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../comms/navModel.dart';
-import '../component/drawer.dart';
+import '../global/global.dart';
 import '../theme/theme.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -14,282 +22,131 @@ class DashboardScreen extends StatefulWidget {
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
-  final homeNavKey = GlobalKey<NavigatorState>();
-  final searchNavKey = GlobalKey<NavigatorState>();
-  final notificationNavKey = GlobalKey<NavigatorState>();
-  final profileNavKey = GlobalKey<NavigatorState>();
-  int selectedTab = 0;
-  List<NavModel> items = [];
-  List<Map<String, String>> filteredDocuments = [];
-  String selectedFilter = "all";
-  String selectedSortOption = "Last Added";
-
-  bool _isFabClicked = false;
-
-  final List<Map<String, String>> documents = [
-    {
-      "type": "DOC",
-      "name": "Travel.docx",
-      "uploadTime": "12/10/2024",
-      "fileSize": "10mb"
-    },
-    {
-      "type": "PDF",
-      "name": "Document.pdf",
-      "uploadTime": "12/10/2024",
-      "fileSize": "10mb"
-    },
-    {
-      "type": "PDF",
-      "name": "dashboard.pdf",
-      "uploadTime": "12/10/2024",
-      "fileSize": "10mb"
-    },
-    {
-      "type": "PDF",
-      "name": "data.pdf",
-      "uploadTime": "12/10/2024",
-      "fileSize": "10mb"
-    },
-    {
-      "type": "PDF",
-      "name": "other.pdf",
-      "uploadTime": "12/10/2024",
-      "fileSize": "10mb"
-    },
-    {
-      "type": "PDF",
-      "name": "abc.pdf",
-      "uploadTime": "12/10/2024",
-      "fileSize": "10mb"
-    },
-    {
-      "type": "PDF",
-      "name": "xyz.pdf",
-      "uploadTime": "12/10/2024",
-      "fileSize": "10mb"
-    },
-    {
-      "type": "PDF",
-      "name": "intralogic.pdf",
-      "uploadTime": "12/10/2024",
-      "fileSize": "10mb"
-    },
-    {
-      "type": "DOC",
-      "name": "flutter.docx",
-      "uploadTime": "12/10/2024",
-      "fileSize": "10mb"
-    },
-    {
-      "type": "DOC",
-      "name": "dart.docx",
-      "uploadTime": "12/10/2024",
-      "fileSize": "10mb"
-    },
-  ];
-
-  bool isSearching = false;
+class _DashboardScreenState
+    extends BaseWidget<DashboardScreen, DashBoardViewModel> {
+  late DashBoardViewModel vm;
   String searchQuery = "";
-  final TextEditingController searchController = TextEditingController();
+
+  //Uint8List bytes = await getDocumentBytes();
+
+  // @override
+  // void onCreate() {
+  //   super.onCreate();
+  //   vm.init();
+  // }
 
   @override
   void initState() {
     super.initState();
-    filteredDocuments = List.from(documents);
+    //vm.filterData = List.from(vm.documentList);
+    _fetchDocuments();
   }
 
-  void filterDocuments(String query) {
-    setState(() {
-      searchQuery = query;
-      filteredDocuments = documents.where((document) {
-        final name = document["name"]!.toLowerCase();
-        final type = document["type"]!.toLowerCase();
-        final matchesQuery = name.contains(query.toLowerCase());
-        final matchesFilter = selectedFilter == "all" || type == selectedFilter;
+  // Future<void> _fetchDocuments() async {
+  //   try {
+  //     final dio = Dio();
+  //     final response = await dio.get(
+  //       'https://document-manager-sdn7.onrender.com/documents/files',
+  //     );
+  //
+  //     if (response.statusCode == 200) {
+  //       final documents = response.data['data'] as List<dynamic>;
+  //       setState(() {
+  //         vm.filterData = documents.map((doc) {
+  //           return {
+  //             'name': doc['originalName'],
+  //             'type': doc['filename'].endsWith('.pdf') ? 'PDF' : 'DOC',
+  //             'uploadTime': doc['createdAt'],
+  //             'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
+  //             'documentUrl': doc['document_url'],
+  //           };
+  //         }).toList();
+  //       });
+  //     }
+  //   } catch (e) {
+  //     print("Error fetching documents: $e");
+  //   }
+  // }
 
-        return matchesQuery && matchesFilter;
-      }).toList();
+  Future<void> _fetchDocuments() async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        Global.BASE_URL + ' documents/files',
+      );
 
-      _sortDocuments(); // Apply the selected sort after filtering
-    });
-  }
-
-  void toggleSearch() {
-    setState(() {
-      isSearching = !isSearching;
-      if (!isSearching) {
-        searchController.clear();
-        filteredDocuments = List.from(documents);
+      if (response.statusCode == 200) {
+        final documents = response.data['data'] as List<dynamic>;
+        setState(() {
+          vm.documentList = documents.map((doc) {
+            return {
+              'name': doc['originalName'],
+              'type': doc['filename'].endsWith('.pdf')
+                  ? 'pdf'
+                  : doc['filename'].endsWith('.txt') ||
+                          doc['filename'].endsWith('.rtf')
+                      ? 'txt'
+                      : doc['filename'].endsWith('.docx') ||
+                              doc['filename'].endsWith('.doc')
+                          ? 'doc'
+                          : doc['filename'].endsWith('.PNG') ||
+                                  doc['filename'].endsWith('.jpg')
+                              ? 'img'
+                              : 'other',
+              'uploadTime': doc['createdAt'],
+              'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
+              'documentUrl': doc['document_url'],
+              'originalName': doc['originalName'],
+              'id': doc["_id"],
+              'fileName': doc["filename"],
+            };
+          }).toList();
+          vm.filterData = List.from(vm.documentList);
+        });
       }
-    });
+    } catch (e) {
+      print("Error fetching documents: $e");
+    }
   }
 
-  void _sortDocuments() {
-    setState(() {
-      if (selectedSortOption == "A-Z") {
-        filteredDocuments.sort((a, b) =>
-            a["name"]!.toLowerCase().compareTo(b["name"]!.toLowerCase()));
-      } else if (selectedSortOption == "Z-A") {
-        filteredDocuments.sort((a, b) =>
-            b["name"]!.toLowerCase().compareTo(a["name"]!.toLowerCase()));
-      } else if (selectedSortOption == "Type") {
-        filteredDocuments.sort((a, b) =>
-            a["type"]!.toLowerCase().compareTo(b["type"]!.toLowerCase()));
+  Future<Uint8List> getDocumentBytes(String fileUrl) async {
+    try {
+      // Make an HTTP GET request to fetch the document from the URL
+      final response = await http.get(Uri.parse(fileUrl));
+
+      // Check if the response is successful
+      if (response.statusCode == 200) {
+        // Return the document as bytes
+        return response.bodyBytes;
       } else {
-        // Default is "Last Added" (original order)
-        filteredDocuments = List.from(documents);
+        throw Exception("Failed to load document");
       }
-    });
+    } catch (e) {
+      print("Error reading file: $e");
+      throw Exception("Error fetching document bytes");
+    }
   }
 
-  void showSortOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.only(left: 40.0, right: 20.0, top: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Shorting List',
-                    style: TextStyle(fontSize: 20),
-                  ),
-                  IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      icon: Icon(Icons.close))
-                ],
-              ),
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            RadioListTile<String>(
-              title: const Text("Last Added"),
-              value: "Last Added",
-              groupValue: selectedSortOption,
-              onChanged: (value) {
-                setState(() {
-                  selectedSortOption = value!;
-                  _sortDocuments();
-                });
-                Navigator.pop(context);
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text("A-Z"),
-              value: "A-Z",
-              groupValue: selectedSortOption,
-              onChanged: (value) {
-                setState(() {
-                  selectedSortOption = value!;
-                  _sortDocuments();
-                });
-                Navigator.pop(context);
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text("Z-A"),
-              value: "Z-A",
-              groupValue: selectedSortOption,
-              onChanged: (value) {
-                setState(() {
-                  selectedSortOption = value!;
-                  _sortDocuments();
-                });
-                Navigator.pop(context);
-              },
-            ),
-            RadioListTile<String>(
-              title: const Text("Type"),
-              value: "Type",
-              groupValue: selectedSortOption,
-              onChanged: (value) {
-                setState(() {
-                  selectedSortOption = value!;
-                  _sortDocuments();
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        );
-      },
-    );
+  String formatUploadTime(String timestamp) {
+    try {
+      // Parse the timestamp string
+      DateTime parsedDate = DateTime.parse(timestamp);
+
+      // Format to dd-MM-yy
+      String formattedDate = DateFormat('dd-MM-yy').format(parsedDate);
+
+      return formattedDate;
+    } catch (e) {
+      // Handle parsing errors if needed
+      return "Invalid date";
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildContent(BuildContext context, DashBoardViewModel baseNotifier) {
+    vm = baseNotifier;
+
     return Scaffold(
-      // appBar: AppBar(
-      //   iconTheme: IconThemeData(color: Colors.white),
-      //   backgroundColor: Themer.gradient1,
-      //   title: isSearching
-      //       ? TextField(
-      //           style: const TextStyle(color: Themer.white),
-      //           controller: searchController,
-      //           // autofocus: true,
-      //           decoration: InputDecoration(
-      //             hintText: "Search documents...",
-      //             hintStyle: TextStyle(color: Themer.white),
-      //             border: InputBorder.none,
-      //           ),
-      //           onChanged: (value) => _filterDocuments(value),
-      //         )
-      //       : const Text(
-      //           "All Documents",
-      //           style: TextStyle(color: Themer.white),
-      //         ),
-      //   actions: [
-      //     IconButton(
-      //       icon: Icon(
-      //         isSearching ? Icons.close : Icons.search,
-      //         color: Themer.white,
-      //       ),
-      //       onPressed: () {
-      //         setState(() {
-      //           isSearching = !isSearching;
-      //           // searchController.clear();
-      //           // _filterDocuments();
-      //           if (!isSearching) {
-      //             searchQuery = "";
-      //             filteredDocuments =
-      //                 List.from(documents); // Reset to all documents
-      //             _sortDocuments();
-      //           }
-      //         });
-      //       },
-      //     ),
-      //     IconButton(
-      //       icon: Icon(Icons.filter_list),
-      //       onPressed: _showSortOptions,
-      //       color: Themer.white,
-      //     ),
-      //   ],
-      // ),
-
-
-      // appBar: Helper.getAppBar(
-      //     context,title: 'All Document',
-      //     isSearching: isSearching,
-      //     onSearchChanged: filterDocuments,
-      //   onSearchToggle: toggleSearch,
-      //   showSortOptions: showSortOptions,
-      //     searchController: searchController,
-      // ),
-      // drawer: SizedBox(
-      //     height: MediaQuery.of(context).size.height,
-      //     child: CustomDrawer.show(context)),
-
-
       body: Stack(
         children: [
           Container(
@@ -309,83 +166,104 @@ class _DashboardScreenState extends State<DashboardScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Filter Chips Row
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: ["all", "pdf", "doc", "img", "ppt", "txt"]
-                        .map((filter) => Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4.0),
-                              child: FilterChip(
-                                label: Text(
-                                  filter.toUpperCase(),
-                                  style: TextStyle(
-                                    color: selectedFilter == filter
-                                        ? Colors.white
-                                        : Colors.black,
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0, right: 12.0),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      //children: ["all", "pdf", "doc", "img", "ppt", "txt"]
+                      children: ["all", "pdf", "doc", "txt", "img", "other"]
+                          .map((filter) => Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 4.0),
+                                child: FilterChip(
+                                  label: Text(
+                                    filter.toUpperCase(),
+                                    style: TextStyle(
+                                      color: vm.selectedFilter == filter
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
                                   ),
+                                  selected: vm.selectedFilter == filter,
+                                  selectedColor: Themer.gradient1,
+                                  checkmarkColor: Themer.white,
+                                  onSelected: (isSelected) {
+                                    setState(() {
+                                      vm.selectedFilter =
+                                          isSelected ? filter : "all";
+                                      vm.doSearch(searchQuery);
+                                    });
+                                  },
                                 ),
-                                selected: selectedFilter == filter,
-                                selectedColor: Themer.gradient1,
-                                checkmarkColor: Themer.white,
-                                onSelected: (isSelected) {
-                                  setState(() {
-                                    selectedFilter =
-                                        isSelected ? filter : "all";
-                                    filterDocuments(searchQuery);
-                                  });
-                                },
-                              ),
-                            ))
-                        .toList(),
+                              ))
+                          .toList(),
+                    ),
                   ),
                 ),
 
                 Expanded(
                   child: ListView.builder(
-                    itemCount: filteredDocuments.length,
+                    itemCount: vm.filterData.length + 1,
+                    // Add 1 to include the SizedBox
                     itemBuilder: (context, index) {
-                      var document = filteredDocuments[index];
-                      if (selectedFilter != "all" &&
-                          document["type"]!.toLowerCase() != selectedFilter) {
-                        return Container(); // Skip non-matching items
+                      // Check if the current index is the additional one (after the last item)
+                      if (index == vm.filterData.length) {
+                        return SizedBox(
+                            height: 80); // Space after the last list item
                       }
 
+                      var document = vm.filterData[index];
+
+                      // Skip non-matching items
+                      if (vm.selectedFilter != "all" &&
+                          document["type"]!.toLowerCase() !=
+                              vm.selectedFilter) {
+                        return Container();
+                      }
+                      String uploadTime = document["uploadTime"];
+                      String formattedTime = formatUploadTime(uploadTime);
+
+                      // Return List Item
                       return Padding(
-                        padding: const EdgeInsets.only(
-                            top: 4.0, bottom: 4.0, right: 10, left: 10),
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 4.0, horizontal: 10),
                         child: Slidable(
                           endActionPane:
                               ActionPane(motion: BehindMotion(), children: [
                             SlidableAction(
                               onPressed: (context) {
-                                Helper.showDeleteDialog(context);
+                                print('all document data ==> ${document}');
+                                print('document id ==> ${document["id"]}');
+                                Helper.showDeleteDialog(
+                                    context, document["id"]);
                               },
                               backgroundColor: Colors.red.shade300,
                               foregroundColor: Colors.white,
                               icon: Icons.delete,
-                              padding: EdgeInsets.symmetric(horizontal: 2),
-                              //label: 'Delete',
                             ),
                             SlidableAction(
                               onPressed: (context) {
-                                Helper.showRenameDialog(context);
+                                Helper.showRenameDialog(
+                                    context,
+                                    document["fileName"],
+                                    document["originalName"]);
                               },
                               backgroundColor: Themer.gradient1,
                               foregroundColor: Colors.white,
                               icon: Icons.edit,
-                              padding: EdgeInsets.symmetric(horizontal: 2),
-                              //label: 'Rename',
                             ),
                             SlidableAction(
-                              onPressed: (context) {
-                                Helper.shareDocument();
+                              onPressed: (context) async {
+                                print('document data ==> ${document}');
+                                Uint8List bytes = await getDocumentBytes(
+                                    document['documentUrl']);
+                                Helper.shareDocument(
+                                    document["originalName"], bytes);
                               },
                               backgroundColor: Colors.green.shade400,
                               foregroundColor: Colors.white,
                               icon: Icons.share,
-                              padding: EdgeInsets.symmetric(horizontal: 2),
-                              //label: 'Share',
                             ),
                           ]),
                           child: Card(
@@ -403,16 +281,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(document["name"]!),
-                                  SizedBox(
-                                    height: 5,
-                                  ),
+                                  const SizedBox(height: 5),
                                   Row(
                                     children: [
                                       Text(
-                                        "${document["uploadTime"]}",
+                                        formattedTime,
                                         style: TextStyle(
                                             color: Colors.grey[600],
                                             fontSize: 14),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
                                       ),
                                       const SizedBox(width: 12),
                                       Text(
@@ -420,19 +298,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         style: TextStyle(
                                             color: Colors.grey[600],
                                             fontSize: 14),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
                                       ),
                                     ],
                                   ),
                                 ],
                               ),
-                              trailing: IconButton(
-                                onPressed: () {
-                                  Helper.showBottomSheet(context);
-                                },
-                                  icon: Icon(Icons.more_vert),),
-                              onTap: () {
-                                //Helper.showBottomSheet(context);
-                                // Handle document selection
+                              trailing: SizedBox(
+                                width: 30,
+                                child: IconButton(
+                                  onPressed: () async {
+                                    Uint8List bytes = await getDocumentBytes(
+                                        document['documentUrl']);
+                                    Helper.showBottomSheet(context, bytes);
+                                  },
+                                  icon: Icon(Icons.more_vert),
+                                ),
+                              ),
+                              onTap: () async {
+                                print('enter gesture detector');
+                                print("Document: ${document}");
+                                try {
+                                  final url = document["documentUrl"];
+                                  final originalName = document["originalName"];
+                                  print('original name ==> ${originalName}');
+                                  print('document url ==> ${url}');
+
+                                  // Get the temporary directory
+                                  final directory =
+                                      await getTemporaryDirectory();
+                                  final filePath =
+                                      "${directory.path}/$originalName";
+                                  print('file path ==> ${filePath}');
+
+                                  // Check if the file already exists
+                                  final file = File(filePath);
+                                  if (!file.existsSync()) {
+                                    // Download the file
+                                    final response =
+                                        await http.get(Uri.parse(url));
+                                    if (response.statusCode == 200) {
+                                      await file
+                                          .writeAsBytes(response.bodyBytes);
+                                    } else {
+                                      throw Exception(
+                                          "Failed to download file");
+                                    }
+                                  }
+
+                                  // Open the file using open_filex
+                                  final result = await OpenFilex.open(filePath);
+                                  if (result.type != ResultType.done) {
+                                    throw Exception(
+                                        "Error opening file: ${result.message}");
+                                  }
+                                } catch (e) {
+                                  // Handle errors gracefully
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text("Error: ${e.toString()}")),
+                                  );
+                                }
                               },
                             ),
                           ),
@@ -440,11 +368,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       );
                     },
                   ),
-                ),
+                )
               ],
             ),
           ),
-
         ],
       ),
     );
