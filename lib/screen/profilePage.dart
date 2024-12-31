@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:document_manager/global/global.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
@@ -34,10 +35,9 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    // Pre-populate the fields with sample data (you can fetch this data from an API or database)
-    _firstNameController.text = 'Ishita';
-    _lastNameController.text = 'Poshiya';
-    _emailController.text = 'ishitaposhiya@gmail.com';
+    _firstNameController.text = Global.userFirstName!;
+    _lastNameController.text = Global.userLastName!;
+    _emailController.text = Global.userEmail!;
   }
 
   @override

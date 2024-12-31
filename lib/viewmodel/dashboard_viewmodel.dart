@@ -1,8 +1,15 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:appbase/base/base_widget.dart';
 import 'package:dio/dio.dart';
+import 'package:document_manager/global/global.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:appbase/base/base_notifier.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../global/tokenStorage.dart';
 
 class DashBoardViewModel extends BaseNotifier{
 
@@ -15,70 +22,6 @@ class DashBoardViewModel extends BaseNotifier{
   List<Map<String, dynamic>> filterData = [];
   final TextEditingController searchController = TextEditingController();
   List<Map<String, dynamic>> documentList = [];
-
-
-  //  List<Map<String, dynamic>> documentList = [
-  //   {
-  //     "type": "DOC",
-  //     "name": "Travel.docx",
-  //     "uploadTime": "12/10/2024",
-  //     "fileSize": "10mb"
-  //   },
-  //   {
-  //     "type": "PDF",
-  //     "name": "Document.pdf",
-  //     "uploadTime": "12/10/2024",
-  //     "fileSize": "10mb"
-  //   },
-  //   {
-  //     "type": "PDF",
-  //     "name": "dashboard.pdf",
-  //     "uploadTime": "12/10/2024",
-  //     "fileSize": "10mb"
-  //   },
-  //   {
-  //     "type": "PDF",
-  //     "name": "data.pdf",
-  //     "uploadTime": "12/10/2024",
-  //     "fileSize": "10mb"
-  //   },
-  //   {
-  //     "type": "PDF",
-  //     "name": "other.pdf",
-  //     "uploadTime": "12/10/2024",
-  //     "fileSize": "10mb"
-  //   },
-  //   {
-  //     "type": "PDF",
-  //     "name": "abc.pdf",
-  //     "uploadTime": "12/10/2024",
-  //     "fileSize": "10mb"
-  //   },
-  //   {
-  //     "type": "PDF",
-  //     "name": "xyz.pdf",
-  //     "uploadTime": "12/10/2024",
-  //     "fileSize": "10mb"
-  //   },
-  //   {
-  //     "type": "PDF",
-  //     "name": "intralogic.pdf",
-  //     "uploadTime": "12/10/2024",
-  //     "fileSize": "10mb"
-  //   },
-  //   {
-  //     "type": "DOC",
-  //     "name": "flutter.docx",
-  //     "uploadTime": "12/10/2024",
-  //     "fileSize": "10mb"
-  //   },
-  //   {
-  //     "type": "DOC",
-  //     "name": "dart.docx",
-  //     "uploadTime": "12/10/2024",
-  //     "fileSize": "10mb"
-  //   },
-  // ];
 
   String selectedFilter = "all";
   String selectedSortOption = "Latest";
@@ -98,26 +41,31 @@ class DashBoardViewModel extends BaseNotifier{
     // filterData = List.from(documentList);
     // updateDataPresenter(filterData.isEmpty);
   }
+
+
   Future<void> fetchDocuments() async {
     try {
+      String? token = await TokenStorage.getToken();
       final dio = Dio();
+      dio.options.headers['Authorization'] = 'Bearer $token';
       final response = await dio.get(
-        'https://document-manager-sdn7.onrender.com/documents/files',
+        'https://document-manager-sdn7.onrender.com/documents/files/${Global.userId}',
       );
 
       if (response.statusCode == 200) {
         final documents = response.data['data'] as List<dynamic>;
-          filterData = documents.map((doc) {
-            return {
-              'name': doc['originalName'],
-              'type': doc['filename'].endsWith('.pdf') ? 'PDF' : 'DOC',
-              'uploadTime': doc['createdAt'],
-              'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
-              'documentUrl': doc['document_url'],
-            };
-          }).toList();
+        documentList = documents.map((doc) {
+          return {
+            'name': doc['originalName'],
+            'type': _getFileType(doc['filename']),
+            'uploadTime': doc['createdAt'],
+            'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
+            'documentUrl': doc['document_url'],
+            'id': doc["_id"],
+            'fileName': doc["filename"],
+          };
+        }).toList();
         filterData = List.from(documentList);
-        updateDataPresenter(filterData.isEmpty);
         notifyListeners();
       }
     } catch (e) {
@@ -125,41 +73,37 @@ class DashBoardViewModel extends BaseNotifier{
     }
   }
 
-  // Future<void> fetchDocuments() async {
-  //   try {
-  //     isLoading = true;
-  //     notifyListeners();
-  //
-  //     final response = await http.get(
-  //       Uri.parse("https://document-manager-sdn7.onrender.com/documents/files"),
-  //     );
-  //
-  //     if (response.statusCode == 200) {
-  //       final List<dynamic> data = jsonDecode(response.body);
-  //       documentList = data.map((e) {
-  //         return {
-  //           "type": e["type"] ?? "Unknown",
-  //           "name": e["name"] ?? "Untitled",
-  //           "uploadTime": e["uploadTime"] ?? "Unknown",
-  //           "fileSize": e["fileSize"] ?? "Unknown",
-  //         };
-  //       }).toList();
-  //
-  //       filterData = List.from(documentList);
-  //       updateDataPresenter(false);
-  //     } else {
-  //       throw Exception("Failed to load documents");
-  //     }
-  //   } catch (e) {
-  //     print("Error fetching documents: $e");
-  //     documentList = [];
-  //     filterData = [];
-  //     updateDataPresenter(false);
-  //   } finally {
-  //     isLoading = false;
-  //     notifyListeners();
-  //   }
-  // }
+  Future<void> uploadDocument(BuildContext context, File file) async {
+    try {
+      String? token = await TokenStorage.getToken();
+      final dio = Dio();
+      dio.options.headers['Authorization'] = 'Bearer $token';
+      final formData = FormData.fromMap({
+        "file": await MultipartFile.fromFile(file.path, filename: file.path.split('/').last),
+        "user_id": Global.userId
+      });
+
+      final response = await dio.post(
+        Global.BASE_URL + 'documents/upload',
+        data: formData,
+      );
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Document uploaded successfully')),
+        );
+
+        // Refresh the document list
+        await DashBoardViewModel().fetchDocuments();
+      }
+    } catch (e) {
+      print("Error uploading document: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to upload document')),
+      );
+    }
+  }
+
 
   void updateDataPresenter(bool loading){
     isLoading = loading;
@@ -180,6 +124,166 @@ class DashBoardViewModel extends BaseNotifier{
 
   }
 
+  // void addDocument(Map<String, dynamic> document) {
+  //   documentList.add(document);
+  //   filterData = List.from(documentList);
+  //   notifyListeners();
+  // }
+
+  // Future<void> addDocument() async {
+  //   FilePickerResult? result = await FilePicker.platform.pickFiles();
+  //   if (result != null) {
+  //     final file = File(result.files.single.path!);
+  //     filterData.add({
+  //       'name': result.files.single.name,
+  //       'type': 'Document',
+  //       'fileSize': '${file.lengthSync() / 1024} KB',
+  //     });
+  //     notifyListeners();
+  //   }
+  // }
+
+  Future<void> addDocument() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (result != null) {
+      final file = File(result.files.single.path!);
+      try {
+        String? token = await TokenStorage.getToken();
+        final dio = Dio();
+        dio.options.headers['Authorization'] = 'Bearer $token';
+        final formData = FormData.fromMap({
+          'files': await MultipartFile.fromFile(
+            file.path,
+            filename: result.files.single.name,
+          ),
+          'user_id': Global.userId
+        });
+
+        final response = await dio.post(
+          Global.BASE_URL + 'documents/upload',
+          data: formData,
+        );
+
+        if (response.statusCode == 200) {
+          final uploadedDocs = response.data['data'] as List<dynamic>;
+          for (var doc in uploadedDocs) {
+            documentList.add({
+              'name': doc['originalName'],
+              'type': _getFileType(doc['filename']),
+              'uploadTime': doc['createdAt'],
+              'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
+              'documentUrl': doc['document_url'],
+              'id': doc["_id"],
+              'fileName': doc["filename"],
+              'userId': doc['user_id'],
+            });
+          }
+          filterData = List.from(documentList);
+          notifyListeners();
+        }
+      } catch (e) {
+        print("Error uploading document: $e");
+      }
+    }
+  }
+
+  String _getFileType(String fileName) {
+    if (fileName.endsWith('.pdf')) return 'pdf';
+    if (fileName.endsWith('.txt') || fileName.endsWith('.rtf')) return 'txt';
+    if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) return 'doc';
+    if (fileName.endsWith('.PNG') || fileName.endsWith('.jpg')) return 'img';
+    return 'other';
+  }
+
+  Future<void> addFromGallery() async {
+    final picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      final file = File(image.path);
+      try {
+        String? token = await TokenStorage.getToken();
+        final dio = Dio();
+        dio.options.headers['Authorization'] = 'Bearer $token';
+        final formData = FormData.fromMap({
+          'files': await MultipartFile.fromFile(
+            file.path,
+            filename: image.name,
+          ),
+          'user_id': Global.userId
+        });
+
+        final response = await dio.post(
+          Global.BASE_URL + 'documents/upload',
+          data: formData,
+        );
+
+        if (response.statusCode == 200) {
+          final uploadedDocs = response.data['data'] as List<dynamic>;
+          for (var doc in uploadedDocs) {
+            documentList.add({
+              'name': doc['originalName'],
+              'type': _getFileType(doc['filename']),
+              'uploadTime': doc['createdAt'],
+              'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
+              'documentUrl': doc['document_url'],
+              'id': doc["_id"],
+              'fileName': doc["filename"],
+              'userId': doc['user_id'],
+            });
+          }
+          filterData = List.from(documentList);
+          notifyListeners();
+        }
+      } catch (e) {
+        print("Error uploading document from gallery: $e");
+      }
+    }
+  }
+
+  Future<void> addFromCamera() async {
+    final picker = ImagePicker();
+    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+    if (photo != null) {
+      final file = File(photo.path);
+      try {
+        String? token = await TokenStorage.getToken();
+        final dio = Dio();
+        dio.options.headers['Authorization'] = 'Bearer $token';
+        final formData = FormData.fromMap({
+          'files': await MultipartFile.fromFile(
+            file.path,
+            filename: photo.name,
+          ),
+          'user_id': Global.userId
+        });
+
+        final response = await dio.post(
+          Global.BASE_URL + 'documents/upload',
+          data: formData,
+        );
+
+        if (response.statusCode == 200) {
+          final uploadedDocs = response.data['data'] as List<dynamic>;
+          for (var doc in uploadedDocs) {
+            documentList.add({
+              'name': doc['originalName'],
+              'type': _getFileType(doc['filename']),
+              'uploadTime': doc['createdAt'],
+              'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
+              'documentUrl': doc['document_url'],
+              'id': doc["_id"],
+              'fileName': doc["filename"],
+              'userId': doc['user_id'],
+            });
+          }
+          filterData = List.from(documentList);
+          notifyListeners();
+        }
+      } catch (e) {
+        print("Error uploading document from camera: $e");
+      }
+    }
+  }
   // void doSearch(String typed){
   //   final input = typed.toLowerCase().trim();
   //   filterData = documentList.where((element){

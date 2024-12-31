@@ -54,7 +54,7 @@ class Helper{
     "setting": (BuildContext) => SettingsPage(),
   };
 
-  static  void showBottomSheet(BuildContext context, Uint8List bytes) {
+  static  void showBottomSheet(BuildContext context, Uint8List bytes, String? docId,String? fileName, String? currentFilename ) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -81,7 +81,7 @@ class Helper{
               title: Text('Delete'),
               onTap: () {
                 Navigator.pop(context); // Close the bottom sheet
-                showDeleteDialog(context,'');
+                showDeleteDialog(context,docId);
               },
             ),
             ListTile(
@@ -89,7 +89,7 @@ class Helper{
               title: Text('Rename'),
               onTap: () {
                 Navigator.pop(context); // Close the bottom sheet
-                showRenameDialog(context,'','');
+                showRenameDialog(context, fileName, currentFilename);
               },
             ),
             ListTile(
@@ -97,7 +97,7 @@ class Helper{
               title: Text('Share'),
               onTap: () {
                 Navigator.pop(context); // Close the bottom sheet
-                shareDocument('', bytes);
+                shareDocument(currentFilename, bytes);
               },
             ),
           ],

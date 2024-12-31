@@ -1,16 +1,28 @@
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
+import 'package:appbase/base/base_widget.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:document_manager/screen/homePageSlide.dart';
 import 'package:document_manager/screen/notificationPage.dart';
 import 'package:document_manager/screen/profilePage.dart';
 import 'package:flutter/material.dart';
 import 'package:circular_menu/circular_menu.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:intl/intl.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path_provider/path_provider.dart';
+import '../comms/helper.dart';
 import '../comms/navBar.dart';
 import '../comms/navModel.dart';
 import '../component/drawer.dart';
 import '../component/searchbar.dart';
+import '../global/global.dart';
 import '../theme/theme.dart';
 import "dart:math" show pi;
 
+import '../viewmodel/dashboard_viewmodel.dart';
 import 'dashboard.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,11 +31,11 @@ class HomeScreen extends StatefulWidget {
     this.isSearching});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-
+class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
+  late DashBoardViewModel vm;
   int selectedTab = 0;
   //List<NavModel> items = [];
   GlobalKey<CircularMenuState>? key;
@@ -70,6 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _pageController = PageController();
+    _fetchDocuments();
   }
 
   @override
@@ -85,8 +98,85 @@ class _HomeScreenState extends State<HomeScreen> {
     _pageController?.jumpToPage(index);
   }
 
+  Future<void> _fetchDocuments() async {
+    try {
+      final dio = Dio();
+      final response = await dio.get(
+        Global.BASE_URL+'documents/files',
+      );
+
+      if (response.statusCode == 200) {
+        final documents = response.data['data'] as List<dynamic>;
+        setState(() {
+          vm.documentList = documents.map((doc) {
+            return {
+              'name': doc['originalName'],
+              'type': doc['filename'].endsWith('.pdf')
+                  ? 'pdf'
+                  : doc['filename'].endsWith('.txt') ||
+                  doc['filename'].endsWith('.rtf')
+                  ? 'txt'
+                  : doc['filename'].endsWith('.docx') ||
+                  doc['filename'].endsWith('.doc')
+                  ? 'doc'
+                  : doc['filename'].endsWith('.PNG') ||
+                  doc['filename'].endsWith('.jpg')
+                  ? 'img'
+                  : 'other',
+              'uploadTime': doc['createdAt'],
+              'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
+              'documentUrl': doc['document_url'],
+              'originalName': doc['originalName'],
+              'id': doc["_id"],
+              'fileName': doc["filename"],
+            };
+          }).toList();
+          vm.filterData = List.from(vm.documentList);
+        });
+      }
+    } catch (e) {
+      print("Error fetching documents: $e");
+    }
+  }
+
+  Future<Uint8List> getDocumentBytes(String fileUrl) async {
+    try {
+      // Make an HTTP GET request to fetch the document from the URL
+      final response = await http.get(Uri.parse(fileUrl));
+
+      // Check if the response is successful
+      if (response.statusCode == 200) {
+        // Return the document as bytes
+        return response.bodyBytes;
+      } else {
+        throw Exception("Failed to load document");
+      }
+    } catch (e) {
+      print("Error reading file: $e");
+      throw Exception("Error fetching document bytes");
+    }
+  }
+
+  String formatUploadTime(String timestamp) {
+    try {
+      // Parse the timestamp string
+      DateTime parsedDate = DateTime.parse(timestamp);
+
+      // Format to dd-MM-yy
+      String formattedDate = DateFormat('dd-MM-yy').format(parsedDate);
+
+      return formattedDate;
+    } catch (e) {
+      // Handle parsing errors if needed
+      return "Invalid date";
+    }
+  }
+
+
   @override
-  Widget build(BuildContext context) {
+  Widget buildContent(BuildContext context,  DashBoardViewModel baseNotifier) {
+    vm = baseNotifier;
+
     return Scaffold(
       backgroundColor: Colors.white,
       // appBar: AppBar(
@@ -232,7 +322,155 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 16),
+            //SizedBox(height: 16),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              // itemCount: vm.filterData.length + 1,
+              itemCount: (vm.filterData.length > 5 ? 5 : vm.filterData.length) + 1,
+              itemBuilder: (context, index) {
+                // if (index == vm.filterData.length) {
+                //   return const SizedBox(height: 80);
+                // }
+                if (index == (vm.filterData.length > 5 ? 5 : vm.filterData.length)) {
+                  return const SizedBox(height: 80);
+                }
+
+                int adjustedIndex = vm.filterData.length - (vm.filterData.length > 5 ? 5 : vm.filterData.length) + index;
+                var document = vm.filterData[adjustedIndex];
+               // var document = vm.filterData[index];
+
+                // Skip non-matching items
+                if (vm.selectedFilter != "all" &&
+                    document["type"]?.toLowerCase() != vm.selectedFilter) {
+                  return Container();
+                }
+
+                // Safely access fields with null-checks
+                String name = document["name"] ?? "Unnamed Document";
+                String type = document["type"] ?? "Unknown";
+                String uploadTime = document["uploadTime"] ?? "";
+                String formattedTime = formatUploadTime(uploadTime);
+                String fileSize = document["fileSize"]?.toString() ?? "Unknown Size";
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 10),
+                  child: Slidable(
+                    endActionPane: ActionPane(motion: const BehindMotion(), children: [
+                      SlidableAction(
+                        onPressed: (context) {
+                          if (document["id"] != null) {
+                            Helper.showDeleteDialog(context, document["id"]);
+                          }
+                        },
+                        backgroundColor: Colors.red.shade300,
+                        foregroundColor: Colors.white,
+                        icon: Icons.delete,
+                      ),
+                      SlidableAction(
+                        onPressed: (context) {
+                          Helper.showRenameDialog(
+                              context, document["fileName"] ?? "", document["originalName"] ?? "");
+                        },
+                        backgroundColor: Themer.gradient1,
+                        foregroundColor: Colors.white,
+                        icon: Icons.edit,
+                      ),
+                      SlidableAction(
+                        onPressed: (context) async {
+                          if (document['documentUrl'] != null && document["originalName"] != null) {
+                            Uint8List bytes = await getDocumentBytes(document['documentUrl']);
+                            Helper.shareDocument(document["originalName"], bytes);
+                          }
+                        },
+                        backgroundColor: Colors.green.shade400,
+                        foregroundColor: Colors.white,
+                        icon: Icons.share,
+                      ),
+                    ]),
+                    child: Card(
+                      color: Colors.white,
+                      child: ListTile(
+                        leading: Icon(
+                          type == "PDF" ? Icons.picture_as_pdf : Icons.insert_drive_file,
+                          color: type == "PDF" ? Colors.red : Colors.blue,
+                          size: 40,
+                        ),
+                        title: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(name),
+                            const SizedBox(height: 5),
+                            Row(
+                              children: [
+                                Text(
+                                  formattedTime,
+                                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  fileSize,
+                                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        trailing: SizedBox(
+                          width: 30,
+                          child: IconButton(
+                            onPressed: () async {
+                              if (document['documentUrl'] != null) {
+                                Uint8List bytes = await getDocumentBytes(document['documentUrl']);
+                                Helper.showBottomSheet(context, bytes, document["id"], document["fileName"] ?? "",
+                                    document["originalName"] ?? "");
+                              }
+                            },
+                            icon: const Icon(Icons.more_vert),
+                          ),
+                        ),
+                        onTap: () async {
+                          try {
+                            final url = document["documentUrl"];
+                            final originalName = document["originalName"];
+
+                            if (url != null && originalName != null) {
+                              final directory = await getTemporaryDirectory();
+                              final filePath = "${directory.path}/$originalName";
+
+                              final file = File(filePath);
+                              if (!file.existsSync()) {
+                                final response = await http.get(Uri.parse(url));
+                                if (response.statusCode == 200) {
+                                  await file.writeAsBytes(response.bodyBytes);
+                                } else {
+                                  throw Exception("Failed to download file");
+                                }
+                              }
+
+                              final result = await OpenFilex.open(filePath);
+                              if (result.type != ResultType.done) {
+                                throw Exception("Error opening file: ${result.message}");
+                              }
+                            } else {
+                              throw Exception("Invalid file data");
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: ${e.toString()}")),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),

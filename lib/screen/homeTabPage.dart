@@ -140,6 +140,8 @@ class _HomeTabPageState extends BaseWidget<HomeTabPage, DashBoardViewModel> with
     }
   }
 
+
+
   Future<void> _pickDocument(BuildContext context) async {
     try {
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -187,7 +189,7 @@ class _HomeTabPageState extends BaseWidget<HomeTabPage, DashBoardViewModel> with
       );
 
       if (response.statusCode == 200) {
-        return response.data; // API response data
+        return response.data;
       }
     } catch (e) {
       print("Error uploading document: $e");
@@ -330,14 +332,18 @@ class _HomeTabPageState extends BaseWidget<HomeTabPage, DashBoardViewModel> with
                           Colors.deepPurple,
                           Colors.pink,
                         ][index],
-                        onTap: () {
+                        onTap: () async{
                           // Define onTap action for each menu item
                           if (index == 1) {
-                            _pickImage(ImageSource.camera);
+                            vm.addFromCamera();
+                            //File? file = await _pickImage(ImageSource.camera);
+                           // _pickImage(ImageSource.camera);
                           } else if (index == 2) {
-                            _pickImage(ImageSource.gallery);
+                            vm.addFromGallery();
+                           // _pickImage(ImageSource.gallery);
                           } else if (index == 3) {
-                            _pickDocument(context);
+                            vm.addDocument();
+                           // _pickDocument(context);
                           }
                         },
                       ),
