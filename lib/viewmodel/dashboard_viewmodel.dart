@@ -57,7 +57,7 @@ class DashBoardViewModel extends BaseNotifier{
         documentList = documents.map((doc) {
           return {
             'name': doc['originalName'],
-            'type': _getFileType(doc['filename']),
+            'type': _getFileType(doc['originalName']),
             'uploadTime': doc['createdAt'],
             'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
             'documentUrl': doc['document_url'],
@@ -70,37 +70,6 @@ class DashBoardViewModel extends BaseNotifier{
       }
     } catch (e) {
       print("Error fetching documents: $e");
-    }
-  }
-
-  Future<void> uploadDocument(BuildContext context, File file) async {
-    try {
-      String? token = await TokenStorage.getToken();
-      final dio = Dio();
-      dio.options.headers['Authorization'] = 'Bearer $token';
-      final formData = FormData.fromMap({
-        "file": await MultipartFile.fromFile(file.path, filename: file.path.split('/').last),
-        "user_id": Global.userId
-      });
-
-      final response = await dio.post(
-        Global.BASE_URL + 'documents/upload',
-        data: formData,
-      );
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Document uploaded successfully')),
-        );
-
-        // Refresh the document list
-        await DashBoardViewModel().fetchDocuments();
-      }
-    } catch (e) {
-      print("Error uploading document: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to upload document')),
-      );
     }
   }
 
@@ -124,66 +93,72 @@ class DashBoardViewModel extends BaseNotifier{
 
   }
 
-  // void addDocument(Map<String, dynamic> document) {
-  //   documentList.add(document);
-  //   filterData = List.from(documentList);
-  //   notifyListeners();
-  // }
+  Future<void> _uploadDocument(File file, String fileName) async {
+    try {
+      String? token = await TokenStorage.getToken();
+      final dio = Dio();
+      dio.options.headers['token'] = '$token';
+      dio.options.validateStatus = (status) {
+        return status != null && status >= 200 && status <= 403;
+      };
 
-  // Future<void> addDocument() async {
-  //   FilePickerResult? result = await FilePicker.platform.pickFiles();
-  //   if (result != null) {
-  //     final file = File(result.files.single.path!);
-  //     filterData.add({
-  //       'name': result.files.single.name,
-  //       'type': 'Document',
-  //       'fileSize': '${file.lengthSync() / 1024} KB',
-  //     });
-  //     notifyListeners();
-  //   }
-  // }
+      final formData = FormData.fromMap({
+        'files': await MultipartFile.fromFile(
+          file.path,
+          filename: fileName,
+        ),
+        'user_id': Global.userId,
+      });
 
-  Future<void> addDocument() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if (result != null) {
-      final file = File(result.files.single.path!);
-      try {
-        String? token = await TokenStorage.getToken();
-        final dio = Dio();
-        dio.options.headers['Authorization'] = 'Bearer $token';
-        final formData = FormData.fromMap({
-          'files': await MultipartFile.fromFile(
-            file.path,
-            filename: result.files.single.name,
-          ),
-          'user_id': Global.userId
-        });
+      final response = await dio.post(
+        Global.BASE_URL + 'api/upload-document',
+        data: formData,
+      );
 
-        final response = await dio.post(
-          Global.BASE_URL + 'documents/upload',
-          data: formData,
-        );
+      print('statuscode response ==> ${response.statusCode} , msg ==> ${response.statusMessage}');
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+        final message = responseData['msg'] ?? 'Operation completed.';
+        final uploadedDocs = responseData['body'] as List<dynamic>? ?? [];
 
-        if (response.statusCode == 200) {
-          final uploadedDocs = response.data['data'] as List<dynamic>;
+        if (uploadedDocs.isNotEmpty) {
           for (var doc in uploadedDocs) {
             documentList.add({
               'name': doc['originalName'],
-              'type': _getFileType(doc['filename']),
-              'uploadTime': doc['createdAt'],
+              'type': _getFileType(doc['originalName']),
+              'uploadTime': doc['created_at'],
               'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
               'documentUrl': doc['document_url'],
-              'id': doc["_id"],
-              'fileName': doc["filename"],
+              'id': doc['_id'],
+              'fileName': fileName,
               'userId': doc['user_id'],
             });
           }
           filterData = List.from(documentList);
           notifyListeners();
         }
-      } catch (e) {
-        print("Error uploading document: $e");
+
+        if (message.isNotEmpty) {
+          ScaffoldMessenger.of(baseWidget.context).showSnackBar(
+            SnackBar(content: Text(message)),
+          );
+        }
       }
+      else if (response.statusCode == 403 && response.data['success'] == 0) {
+        final message = response.data['msg'] ?? 'Duplicate documents detected.';
+        ScaffoldMessenger.of(baseWidget.context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      } else {
+        ScaffoldMessenger.of(baseWidget.context).showSnackBar(
+          SnackBar(content: Text('Failed to upload document.')),
+        );
+      }
+    } catch (e) {
+      print("Error uploading document: $e");
+      ScaffoldMessenger.of(baseWidget.context).showSnackBar(
+        SnackBar(content: Text('An error occurred while uploading the document.')),
+      );
     }
   }
 
@@ -195,48 +170,35 @@ class DashBoardViewModel extends BaseNotifier{
     return 'other';
   }
 
-  Future<void> addFromGallery() async {
-    final picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      final file = File(image.path);
-      try {
-        String? token = await TokenStorage.getToken();
-        final dio = Dio();
-        dio.options.headers['Authorization'] = 'Bearer $token';
-        final formData = FormData.fromMap({
-          'files': await MultipartFile.fromFile(
-            file.path,
-            filename: image.name,
-          ),
-          'user_id': Global.userId
-        });
+  Future<void> addDocument() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      allowMultiple: true, // Allow multiple file selection
+    );
 
-        final response = await dio.post(
-          Global.BASE_URL + 'documents/upload',
-          data: formData,
-        );
-
-        if (response.statusCode == 200) {
-          final uploadedDocs = response.data['data'] as List<dynamic>;
-          for (var doc in uploadedDocs) {
-            documentList.add({
-              'name': doc['originalName'],
-              'type': _getFileType(doc['filename']),
-              'uploadTime': doc['createdAt'],
-              'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
-              'documentUrl': doc['document_url'],
-              'id': doc["_id"],
-              'fileName': doc["filename"],
-              'userId': doc['user_id'],
-            });
-          }
-          filterData = List.from(documentList);
-          notifyListeners();
+    if (result != null) {
+      for (var file in result.files) {
+        final filePath = file.path;
+        if (filePath != null) {
+          final fileToUpload = File(filePath);
+          await _uploadDocument(fileToUpload, file.name);
         }
-      } catch (e) {
-        print("Error uploading document from gallery: $e");
       }
+    }
+  }
+
+  Future<void> addFromGallery() async {
+    try {
+      final List<XFile>? images = await ImagePicker().pickMultiImage();
+      if (images != null && images.isNotEmpty) {
+        for (var image in images) {
+          final file = File(image.path);
+          await _uploadDocument(file, image.name);
+        }
+      } else {
+        print("No images selected.");
+      }
+    } catch (e) {
+      print("Error selecting multiple images: $e");
     }
   }
 
@@ -245,56 +207,10 @@ class DashBoardViewModel extends BaseNotifier{
     final XFile? photo = await picker.pickImage(source: ImageSource.camera);
     if (photo != null) {
       final file = File(photo.path);
-      try {
-        String? token = await TokenStorage.getToken();
-        final dio = Dio();
-        dio.options.headers['Authorization'] = 'Bearer $token';
-        final formData = FormData.fromMap({
-          'files': await MultipartFile.fromFile(
-            file.path,
-            filename: photo.name,
-          ),
-          'user_id': Global.userId
-        });
-
-        final response = await dio.post(
-          Global.BASE_URL + 'documents/upload',
-          data: formData,
-        );
-
-        if (response.statusCode == 200) {
-          final uploadedDocs = response.data['data'] as List<dynamic>;
-          for (var doc in uploadedDocs) {
-            documentList.add({
-              'name': doc['originalName'],
-              'type': _getFileType(doc['filename']),
-              'uploadTime': doc['createdAt'],
-              'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
-              'documentUrl': doc['document_url'],
-              'id': doc["_id"],
-              'fileName': doc["filename"],
-              'userId': doc['user_id'],
-            });
-          }
-          filterData = List.from(documentList);
-          notifyListeners();
-        }
-      } catch (e) {
-        print("Error uploading document from camera: $e");
-      }
+      await _uploadDocument(file, photo.name);
     }
   }
-  // void doSearch(String typed){
-  //   final input = typed.toLowerCase().trim();
-  //   filterData = documentList.where((element){
-  //     final type = element["type"]!.toLowerCase();
-  //     final matchesFilter = selectedFilter == "all" || type == selectedFilter;
-  //     return element["name"]!.toLowerCase().contains(input) && matchesFilter;
-  //   }).toList();
-  //   searchProgress = filterData.length<documentList.length;
-  //   sortDocuments();
-  //   updateDataPresenter(false);
-  // }
+
   void doSearch(String searchQuery) {
     filterData = documentList.where((doc) {
       bool matchesType = selectedFilter == "all" ||
@@ -304,7 +220,6 @@ class DashBoardViewModel extends BaseNotifier{
       return matchesType && matchesQuery;
     }).toList();
   }
-
 
   void sortDocuments(){
     if(selectedSortOption == "A-Z"){

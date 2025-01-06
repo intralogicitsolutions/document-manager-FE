@@ -19,6 +19,7 @@ import '../comms/navModel.dart';
 import '../component/drawer.dart';
 import '../component/searchbar.dart';
 import '../global/global.dart';
+import '../global/tokenStorage.dart';
 import '../theme/theme.dart';
 import "dart:math" show pi;
 
@@ -98,46 +99,48 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
     _pageController?.jumpToPage(index);
   }
 
-  Future<void> _fetchDocuments() async {
-    try {
-      final dio = Dio();
-      final response = await dio.get(
-        Global.BASE_URL+'documents/files',
-      );
+    Future<void> _fetchDocuments() async {
+      try {
+        String? token = await TokenStorage.getToken();
+        final dio = Dio();
+        dio.options.headers['token'] = '$token';
+        final response = await dio.get(
+          '${Global.BASE_URL}api/get-documentlist',
+        );
 
-      if (response.statusCode == 200) {
-        final documents = response.data['data'] as List<dynamic>;
-        setState(() {
-          vm.documentList = documents.map((doc) {
-            return {
-              'name': doc['originalName'],
-              'type': doc['filename'].endsWith('.pdf')
-                  ? 'pdf'
-                  : doc['filename'].endsWith('.txt') ||
-                  doc['filename'].endsWith('.rtf')
-                  ? 'txt'
-                  : doc['filename'].endsWith('.docx') ||
-                  doc['filename'].endsWith('.doc')
-                  ? 'doc'
-                  : doc['filename'].endsWith('.PNG') ||
-                  doc['filename'].endsWith('.jpg')
-                  ? 'img'
-                  : 'other',
-              'uploadTime': doc['createdAt'],
-              'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
-              'documentUrl': doc['document_url'],
-              'originalName': doc['originalName'],
-              'id': doc["_id"],
-              'fileName': doc["filename"],
-            };
-          }).toList();
-          vm.filterData = List.from(vm.documentList);
-        });
+        if (response.statusCode == 200) {
+          final documents = response.data['body'] as List<dynamic>;
+          setState(() {
+            vm.documentList = documents.map((doc) {
+              return {
+                'name': doc['originalName'],
+                'type': doc['originalName'].endsWith('.pdf')
+                    ? 'pdf'
+                    : doc['originalName'].endsWith('.txt') ||
+                    doc['originalName'].endsWith('.rtf')
+                    ? 'txt'
+                    : doc['originalName'].endsWith('.docx') ||
+                    doc['originalName'].endsWith('.doc')
+                    ? 'doc'
+                    : doc['originalName'].endsWith('.PNG') ||
+                    doc['originalName'].endsWith('.jpg')
+                    ? 'img'
+                    : 'other',
+                'uploadTime': doc['created_at'],
+                'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
+                'documentUrl': doc['document_url'],
+                'originalName': doc['originalName'],
+                'id': doc["_id"],
+                //'fileName': doc["filename"],
+              };
+            }).toList();
+            vm.filterData = List.from(vm.documentList);
+          });
+        }
+      } catch (e) {
+        print("Error fetching documents: $e");
       }
-    } catch (e) {
-      print("Error fetching documents: $e");
     }
-  }
 
   Future<Uint8List> getDocumentBytes(String fileUrl) async {
     try {
@@ -179,62 +182,6 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      // appBar: AppBar(
-      //   backgroundColor: Themer.gradient1,
-      //   elevation: 0,
-      //   title: Row(
-      //     mainAxisAlignment: MainAxisAlignment.center,
-      //     children: [
-      //       Icon(Icons.lock, color: Colors.white),
-      //       SizedBox(width: 8),
-      //       Text('Document Manager', style: TextStyle(color: Colors.white)),
-      //     ],
-      //   ),
-      //   actions: [
-      //     IconButton(
-      //       icon: Icon(Icons.search, color: Colors.white),
-      //       onPressed: () {},
-      //     ),
-      //   ],
-      // ),
-
-      // appBar: AppBar(
-      //   iconTheme: IconThemeData(color: Colors.white),
-      //   backgroundColor: Themer.gradient1,
-      //   elevation: 0,
-      //   title: isSearching  ?
-      //   Searchbar((type) {
-      //
-      //   })
-      //       :const Row(
-      //    // mainAxisAlignment: MainAxisAlignment.center,
-      //     children: [
-      //       Icon(Icons.lock, color: Colors.white),
-      //        SizedBox(width: 5),
-      //       Text('Document Manager', style: TextStyle(color: Colors.white)),
-      //     ],
-      //   ),
-      //   actions: [
-      //     IconButton(
-      //       icon: Icon(isSearching  ? Icons.close : Icons.search,color: Themer.white,),
-      //       onPressed: () {
-      //         setState(() {
-      //           isSearching = !isSearching;
-      //           // searchController.clear();
-      //           // _filterDocuments();
-      //           if (!isSearching) {
-      //             searchQuery = "";
-      //             // filteredDocuments = List.from(documents); // Reset to all documents
-      //             // _sortDocuments();
-      //           }
-      //         });
-      //       },
-      //     ),
-      //   ],
-      // ),
-      // drawer: SizedBox(
-      //     height: MediaQuery.of(context).size.height,
-      //     child: CustomDrawer.show(context)),
 
       body: SingleChildScrollView(
         child: Column(
@@ -348,6 +295,9 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
 
                 // Safely access fields with null-checks
                 String name = document["name"] ?? "Unnamed Document";
+                if (name.contains("_")) {
+                  name = name.split("_").sublist(1).join("_");
+                }
                 String type = document["type"] ?? "Unknown";
                 String uploadTime = document["uploadTime"] ?? "";
                 String formattedTime = formatUploadTime(uploadTime);
@@ -360,7 +310,14 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                       SlidableAction(
                         onPressed: (context) {
                           if (document["id"] != null) {
-                            Helper.showDeleteDialog(context, document["id"]);
+                            Helper.showDeleteDialog(context, document["id"],
+                                  () {
+                                setState(() {
+                                  // Remove the document from the list directly
+                                  vm.filterData.removeAt(index);
+                                });
+                              },
+                            );
                           }
                         },
                         backgroundColor: Colors.red.shade300,
@@ -370,7 +327,19 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                       SlidableAction(
                         onPressed: (context) {
                           Helper.showRenameDialog(
-                              context, document["fileName"] ?? "", document["originalName"] ?? "");
+                              context, document["name"] ?? "",
+                            document["id"],
+                                (oldFilename, newFilename) {
+                              setState(() {
+                                // Find the document in the list and update it
+                                final index = vm.filterData.indexWhere(
+                                        (doc) => doc["fileName"] == oldFilename);
+                                if (index != -1) {
+                                  vm.filterData[index]["name"] = newFilename;
+                                }
+                              });
+                            },
+                          );
                         },
                         backgroundColor: Themer.gradient1,
                         foregroundColor: Colors.white,
@@ -426,8 +395,25 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                             onPressed: () async {
                               if (document['documentUrl'] != null) {
                                 Uint8List bytes = await getDocumentBytes(document['documentUrl']);
-                                Helper.showBottomSheet(context, bytes, document["id"], document["fileName"] ?? "",
-                                    document["originalName"] ?? "");
+                                Helper.showBottomSheet(context, bytes, document["id"],
+                                  document["name"] ?? "",
+                                    document["originalName"] ?? "",
+                                      (oldFilename, newFilename) {
+                                    setState(() {
+                                      final index = vm.filterData.indexWhere(
+                                              (doc) => doc["fileName"] == oldFilename);
+                                      if (index != -1) {
+                                        vm.filterData[index]["name"] = newFilename;
+                                      }
+                                    });
+                                  },
+                                      () {
+                                    setState(() {
+                                      // Remove the document from the list directly
+                                      vm.filterData.removeAt(index);
+                                    });
+                                  },
+                                );
                               }
                             },
                             icon: const Icon(Icons.more_vert),

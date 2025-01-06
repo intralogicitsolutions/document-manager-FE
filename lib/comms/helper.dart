@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import '../global/global.dart';
+import '../global/tokenStorage.dart';
 import '../screen/aboutUs.dart';
 import '../screen/contactProfile.dart';
 import '../screen/dashboard.dart';
@@ -54,7 +55,10 @@ class Helper{
     "setting": (BuildContext) => SettingsPage(),
   };
 
-  static  void showBottomSheet(BuildContext context, Uint8List bytes, String? docId,String? fileName, String? currentFilename ) {
+  static  void showBottomSheet(BuildContext context, Uint8List bytes, String? docId, String? name, String? currentFilename,
+      Function(String oldFilename, String newFilename) onRenameSuccess,
+      VoidCallback onDeleteSuccess,
+      ) {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -81,7 +85,7 @@ class Helper{
               title: Text('Delete'),
               onTap: () {
                 Navigator.pop(context); // Close the bottom sheet
-                showDeleteDialog(context,docId);
+                showDeleteDialog(context,docId,onDeleteSuccess);
               },
             ),
             ListTile(
@@ -89,7 +93,7 @@ class Helper{
               title: Text('Rename'),
               onTap: () {
                 Navigator.pop(context); // Close the bottom sheet
-                showRenameDialog(context, fileName, currentFilename);
+                showRenameDialog(context,docId, name, onRenameSuccess);
               },
             ),
             ListTile(
@@ -106,16 +110,22 @@ class Helper{
     );
   }
 
-  static void deleteDocument(String docId, BuildContext context) async {
+  static void deleteDocument(String docId, BuildContext context, VoidCallback onDeleteSuccess,) async {
+    String? token = await TokenStorage.getToken();
     print('delete document id ==> ${docId}');
-    final url = Global.BASE_URL +'documents/files/$docId';
+    final url = Global.BASE_URL +'api/delete-document/$docId';
     try {
-      final response = await http.delete(Uri.parse(url));
+      final response = await http.delete(
+          Uri.parse(url),
+        headers: {
+          'token': '$token',
+        },
+      );
 
       if (response.statusCode == 200) {
-        // Success
         final responseBody = json.decode(response.body);
-        if (responseBody["message"] == "File deleted successfully") {
+        if (responseBody["success"] == 1 && responseBody["msg"] == "File deleted successfully") {
+          onDeleteSuccess();
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text('File deleted successfully'),
@@ -140,8 +150,9 @@ class Helper{
     }
   }
 
-  static void renameDocument(String fileName, String newFilename, BuildContext context) async {
-    final url = Global.BASE_URL + 'documents/files/$fileName';
+  static Future<bool> renameDocument(String docId, String newFilename, BuildContext context) async {
+    String? token = await TokenStorage.getToken();
+    final url = Global.BASE_URL + 'api/rename-document/${docId}';
     final body = json.encode({
       "newFilename": newFilename,
     });
@@ -149,7 +160,10 @@ class Helper{
     try {
       final response = await http.put(
         Uri.parse(url),
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          'token': '$token',
+          "Content-Type": "application/json"
+        },
         body: body,
       );
 
@@ -162,8 +176,25 @@ class Helper{
               content: Text('File renamed successfully'),
             ));
           }
+          return true;
         }
-      } else {
+      } else if(response.statusCode == 403){
+        final responseBody = json.decode(response.body);
+        if (responseBody["msg"] != null) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(responseBody["msg"]),
+            ));
+          }
+        }else{
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Failed to rename file'),
+            ));
+          }
+        }
+      }
+      else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text('Failed to rename file'),
@@ -171,17 +202,17 @@ class Helper{
         }
       }
     } catch (e) {
-      // Handle error
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('An error occurred while renaming the file'),
         ));
       }
       }
+      return false;
   }
 
 
-  static void showDeleteDialog(BuildContext context, String? docId) {
+  static void showDeleteDialog(BuildContext context, String? docId, VoidCallback onDeleteSuccess) {
     print('showDeleteDialog id ==> ${docId}');
     showDialog(
       context: context,
@@ -201,7 +232,7 @@ class Helper{
                 print('document id ============> ${docId}');
                 Navigator.pop(context); // Close the dialog
                 // Call the delete function with the filename
-                deleteDocument(docId!, context);
+                deleteDocument(docId!, context, onDeleteSuccess);
               },
               child: Text('Delete'),
             ),
@@ -213,7 +244,10 @@ class Helper{
 
 
   static void showRenameDialog(BuildContext context,
-      String? fileName, String? currentFilename) {
+       String? docId,
+       String? currentFilename,
+      Function(String docId, String newFilename) onRenameSuccess
+      ) {
     TextEditingController _controller = TextEditingController(text: currentFilename);
 
     showDialog(
@@ -234,10 +268,12 @@ class Helper{
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
-                String newName = _controller.text;
+               // Navigator.pop(context); // Close the dialog
+                String newName = _controller.text.trim();
                 if(newName.isNotEmpty){
-                  renameDocument(fileName!, newName, context);
+                  Navigator.pop(context);
+                  renameDocument(docId!, newName, context);
+                  onRenameSuccess(docId, newName);
                 }else {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text('New file name cannot be empty'),

@@ -44,7 +44,7 @@ class _DashboardScreenState
   void initState() {
     super.initState();
     //vm.filterData = List.from(vm.documentList);
-    _fetchDocuments();
+  //  _fetchDocuments();
   }
 
   Future<void> _fetchDocuments() async {
@@ -201,6 +201,9 @@ class _DashboardScreenState
 
                       // Safely access fields with null-checks
                       String name = document["name"] ?? "Unnamed Document";
+                      if (name.contains("_")) {
+                        name = name.split("_").sublist(1).join("_");
+                      }
                       String type = document["type"] ?? "Unknown";
                       String uploadTime = document["uploadTime"] ?? "";
                       String formattedTime = formatUploadTime(uploadTime);
@@ -213,7 +216,14 @@ class _DashboardScreenState
                             SlidableAction(
                               onPressed: (context) {
                                 if (document["id"] != null) {
-                                  Helper.showDeleteDialog(context, document["id"]);
+                                  Helper.showDeleteDialog(context, document["id"],
+                                        () {
+                                      setState(() {
+                                        // Remove the document from the list directly
+                                        vm.filterData.removeAt(index);
+                                      });
+                                    },
+                                  );
                                 }
                               },
                               backgroundColor: Colors.red.shade300,
@@ -223,7 +233,19 @@ class _DashboardScreenState
                             SlidableAction(
                               onPressed: (context) {
                                 Helper.showRenameDialog(
-                                    context, document["fileName"] ?? "", document["originalName"] ?? "");
+                                    context, document["name"] ?? "",
+                                      document["id"],
+                                      (oldFilename, newFilename) {
+                                    setState(() {
+                                      // Find the document in the list and update it
+                                      final index = vm.filterData.indexWhere(
+                                              (doc) => doc["fileName"] == oldFilename);
+                                      if (index != -1) {
+                                        vm.filterData[index]["name"] = newFilename;
+                                      }
+                                    });
+                                  },
+                                );
                               },
                               backgroundColor: Themer.gradient1,
                               foregroundColor: Colors.white,
@@ -278,8 +300,26 @@ class _DashboardScreenState
                                   onPressed: () async {
                                     if (document['documentUrl'] != null) {
                                       Uint8List bytes = await getDocumentBytes(document['documentUrl']);
-                                      Helper.showBottomSheet(context, bytes, document["id"], document["fileName"] ?? "",
-                                          document["originalName"] ?? "");
+                                      Helper.showBottomSheet(context, bytes, document["id"],
+                                          document["name"] ?? "",
+                                          document["originalName"] ?? "",
+                                            (oldFilename, newFilename) {
+                                          setState(() {
+                                            // Find the document in the list and update it
+                                            final index = vm.filterData.indexWhere(
+                                                    (doc) => doc["fileName"] == oldFilename);
+                                            if (index != -1) {
+                                              vm.filterData[index]["name"] = newFilename;
+                                            }
+                                          });
+                                        },
+                                            () {
+                                          setState(() {
+                                            // Remove the document from the list directly
+                                            vm.filterData.removeAt(index);
+                                          });
+                                        },
+                                      );
                                     }
                                   },
                                   icon: const Icon(Icons.more_vert),

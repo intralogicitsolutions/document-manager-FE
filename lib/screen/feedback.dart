@@ -1,7 +1,11 @@
+import 'dart:convert';
+
+import 'package:document_manager/global/global.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_svg/svg.dart';
-
+import 'package:http/http.dart' as http;
+import '../global/tokenStorage.dart';
 import '../theme/theme.dart';
 
 class RatingReviewPage extends StatefulWidget {
@@ -12,15 +16,89 @@ class RatingReviewPage extends StatefulWidget {
 class _RatingReviewPageState extends State<RatingReviewPage> {
   double _rating = 0.0;  // Variable to store the rating value
   TextEditingController _reviewController = TextEditingController();
+  bool _isFeedbackSubmitted = false;
 
-  void _submitReview() {
-    // Get review text
+  final String apiUrl = Global.BASE_URL + "feedback";
+  final String? userId = Global.userId;
+
+  Future<void> _checkFeedbackStatus() async {
+    setState(() {
+      _isFeedbackSubmitted = false; // Mock check
+    });
+  }
+
+  Future<void> _submitFeedback() async {
+    String? token = await TokenStorage.getToken();
+    // Only submit feedback if not already submitted
+    if (_isFeedbackSubmitted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("You have already submitted feedback.")),
+      );
+      return;
+    }
+
     String reviewText = _reviewController.text;
 
-    // Handle submit action, like saving to database, or sending to server
+    // Construct the payload
+    var feedbackData = {
+      "rating": _rating,
+      "review": reviewText,
+      "user_id": userId
+    };
+
+    try {
+      // Make the POST request to submit feedback
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(feedbackData),
+      );
+
+      print('feedback response : ${response.body}');
+
+      if (response.statusCode == 201) {
+        // setState(() {
+        //   _isFeedbackSubmitted = true;
+        // });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Thank you for your feedback!")),
+        );
+        Navigator.pop(context);
+      } else if(response.statusCode == 400){
+        var responseBody = json.decode(response.body);
+        if (responseBody['message'] == 'You have already submitted feedback.') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("You have already submitted feedback.")),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Failed to submit feedback. Please try again later.")),
+          );
+        }
+      }
+      else {
+        // Handle server error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to submit feedback. Please try again later.")),
+        );
+      }
+    } catch (e) {
+      // Handle network or other errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    }
+  }
+
+  void _submitReview() {
+    String reviewText = _reviewController.text;
+
     print("Rating: $_rating, Review: $reviewText");
 
-    // Clear the fields after submission
     setState(() {
       _rating = 0.0;
       _reviewController.clear();
@@ -30,6 +108,12 @@ class _RatingReviewPageState extends State<RatingReviewPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Thank you for your feedback!")),
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFeedbackStatus();
   }
 
   @override
@@ -108,12 +192,13 @@ class _RatingReviewPageState extends State<RatingReviewPage> {
 
             // Submit button
             ElevatedButton(
-              onPressed: _submitReview,
+              onPressed: _submitFeedback,
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 backgroundColor: Themer.buttonColor.withOpacity(0.2),
               ),
-              child: Text("Submit",style: TextStyle(color: Themer.white, fontSize: 18),),
+              child: Text(_isFeedbackSubmitted ? "Feedback Submitted" : "Submit",
+                style: TextStyle(color: Themer.white, fontSize: 18),),
             ),
           ],
         ),

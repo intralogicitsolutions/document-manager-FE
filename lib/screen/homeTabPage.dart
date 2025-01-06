@@ -128,74 +128,74 @@ class _HomeTabPageState extends BaseWidget<HomeTabPage, DashBoardViewModel> with
     //   }
     // }
   // }
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      print('Enter pick image');
-      final XFile? image = await _picker.pickImage(source: source);
-      if (image != null) {
-        print('Picked image: ${image.path}');
-      }
-    } catch (e) {
-      print("Error picking image: $e");
-    }
-  }
+  // Future<void> _pickImage(ImageSource source) async {
+  //   try {
+  //     print('Enter pick image');
+  //     final XFile? image = await _picker.pickImage(source: source);
+  //     if (image != null) {
+  //       print('Picked image: ${image.path}');
+  //     }
+  //   } catch (e) {
+  //     print("Error picking image: $e");
+  //   }
+  // }
 
 
 
-  Future<void> _pickDocument(BuildContext context) async {
-    try {
-      final FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf', 'doc', 'docx'],
-      );
-
-      if (result != null) {
-        final String? filePath = result.files.single.path;
-        if (filePath != null) {
-          final file = File(filePath);
-
-          // Upload document
-          final response = await _uploadDocument(file);
-
-          if (response != null) {
-            // Notify dashboard to refresh the document list
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Document uploaded successfully!")),
-            );
-
-            // Navigate to the dashboard or refresh state
-            Navigator.pushNamed(context, '/dashboard');
-          }
-        }
-      }
-    } catch (e) {
-      print("Error picking document: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error picking or uploading document")),
-      );
-    }
-  }
-
-  Future<Map<String, dynamic>?> _uploadDocument(File file) async {
-    try {
-      final dio = Dio();
-      final formData = FormData.fromMap({
-        'file': await MultipartFile.fromFile(file.path, filename: file.path.split('/').last),
-      });
-
-      final response = await dio.post(
-        Global.BASE_URL + 'documents/upload',
-        data: formData,
-      );
-
-      if (response.statusCode == 200) {
-        return response.data;
-      }
-    } catch (e) {
-      print("Error uploading document: $e");
-    }
-    return null;
-  }
+  // Future<void> _pickDocument(BuildContext context) async {
+  //   try {
+  //     final FilePickerResult? result = await FilePicker.platform.pickFiles(
+  //       type: FileType.custom,
+  //       allowedExtensions: ['pdf', 'doc', 'docx'],
+  //     );
+  //
+  //     if (result != null) {
+  //       final String? filePath = result.files.single.path;
+  //       if (filePath != null) {
+  //         final file = File(filePath);
+  //
+  //         // Upload document
+  //         final response = await _uploadDocument(file);
+  //
+  //         if (response != null) {
+  //           // Notify dashboard to refresh the document list
+  //           ScaffoldMessenger.of(context).showSnackBar(
+  //             SnackBar(content: Text("Document uploaded successfully!")),
+  //           );
+  //
+  //           // Navigate to the dashboard or refresh state
+  //           Navigator.pushNamed(context, '/dashboard');
+  //         }
+  //       }
+  //     }
+  //   } catch (e) {
+  //     print("Error picking document: $e");
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Error picking or uploading document")),
+  //     );
+  //   }
+  // }
+  //
+  // Future<Map<String, dynamic>?> _uploadDocument(File file) async {
+  //   try {
+  //     final dio = Dio();
+  //     final formData = FormData.fromMap({
+  //       'file': await MultipartFile.fromFile(file.path, filename: file.path.split('/').last),
+  //     });
+  //
+  //     final response = await dio.post(
+  //       Global.BASE_URL + 'documents/upload',
+  //       data: formData,
+  //     );
+  //
+  //     if (response.statusCode == 200) {
+  //       return response.data;
+  //     }
+  //   } catch (e) {
+  //     print("Error uploading document: $e");
+  //   }
+  //   return null;
+  // }
 
 
   // void _toggleMenu() {

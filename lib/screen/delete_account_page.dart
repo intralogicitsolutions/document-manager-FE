@@ -9,7 +9,7 @@ class DeleteAccountPage extends StatefulWidget{
 }
 
 class _DeleteAccountPageState extends State<DeleteAccountPage> {
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(text: Global.userEmail);
   final TextEditingController _reasonController = TextEditingController();
   final TextEditingController _confirmNameController = TextEditingController();
 
@@ -121,7 +121,19 @@ class _DeleteAccountPageState extends State<DeleteAccountPage> {
                 controller: _emailController,
                 decoration: InputDecoration(
                   labelText: "Email",
+                  labelStyle: TextStyle(
+                    color: Colors.black, // Label color
+                  ),
                   border: OutlineInputBorder(),
+                  disabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+                enabled: false,
+                style: TextStyle(
+                  color:  Colors.black, // Text color
                 ),
               ),
               SizedBox(height: 20),

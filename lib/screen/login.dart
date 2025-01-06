@@ -684,8 +684,8 @@ class _LoginFormState extends State<LoginForm> {
   bool isLoading = false;
   String? imageFilename;
 
-  final String signupUrl = Global.BASE_URL+'auth/signup';
-  final String signinUrl = Global.BASE_URL+'auth/signin';
+  final String signupUrl = Global.BASE_URL+'api/signup';
+  final String signinUrl = Global.BASE_URL+'api/signin';
 
   @override
   void initState() {
@@ -721,9 +721,9 @@ class _LoginFormState extends State<LoginForm> {
         // Create a request to upload the image
         var request = http.MultipartRequest(
           'POST',
-          Uri.parse(Global.BASE_URL + 'images/upload'),
+          Uri.parse(Global.BASE_URL + 'api/upload-document'),
         );
-        request.files.add(await http.MultipartFile.fromPath('image', widget.image!.path));
+        request.files.add(await http.MultipartFile.fromPath('files', widget.image!.path));
 
         // Send the request
 
@@ -732,8 +732,8 @@ class _LoginFormState extends State<LoginForm> {
 
         if (response.statusCode == 200) {
           final Map<String, dynamic> imageResponse = jsonDecode(responseData.body);
-          imgUrl = imageResponse['data']['img_url']; // Get img_url from the response
-          imageFilename = imageResponse['data']['filename'];
+          imgUrl = imageResponse['data']['document_url']; // Get img_url from the response
+          imageFilename = imageResponse['data']['originalName'];
           // updateImageFilename(imageResponse['data']['filename']);
           print('image response :::::::: ${imgUrl} , ${widget.imageFilename} , ${imageResponse}');
         } else {
@@ -818,24 +818,32 @@ class _LoginFormState extends State<LoginForm> {
       final Map<String, dynamic> responseData = jsonDecode(response.body);
       if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        final userId = responseData['data']['_id'];
-        Global.userId = userId;
-        final userFirstName = responseData['data']['first_name'];
-        Global.userFirstName = userFirstName;
+      if (response.statusCode == 200 && responseData['success'] == 1) {
+        final user = responseData['body'][0];
 
-        final userLastName = responseData['data']['last_name'];
-        Global.userLastName = userLastName;
+        Global.userId = user['_id'];
+        Global.userFirstName = user['first_name'];
+        Global.userLastName = user['last_name'];
+        Global.userEmail = user['email_id'];
+        Global.userImagePath = user['image_path'];
 
-        final userEmail = responseData['data']['email_id'];
-        Global.userEmail = userEmail;
-
-        final userImagePath = responseData['data']['image_path'];
-        Global.userImagePath = userImagePath;
+        // final userId = responseData['data']['_id'];
+        // Global.userId = userId;
+        // final userFirstName = responseData['data']['first_name'];
+        // Global.userFirstName = userFirstName;
+        //
+        // final userLastName = responseData['data']['last_name'];
+        // Global.userLastName = userLastName;
+        //
+        // final userEmail = responseData['data']['email_id'];
+        // Global.userEmail = userEmail;
+        //
+        // final userImagePath = responseData['data']['image_path'];
+        // Global.userImagePath = userImagePath;
 
         print('image path is ===> ${Global.userImagePath}');
 
-        final token = responseData['data']['access_token'];
+        final token = user['token'];
         await TokenStorage.saveToken(token);
         Global.token = token;
         print('token :: $token');
@@ -848,7 +856,7 @@ class _LoginFormState extends State<LoginForm> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Login Error'),
-            content: Text(responseData['message']),
+            content: Text(responseData['msg']),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -866,6 +874,7 @@ class _LoginFormState extends State<LoginForm> {
       });
     }
   }
+
 
 
   @override
