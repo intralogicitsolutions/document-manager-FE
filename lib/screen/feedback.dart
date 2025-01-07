@@ -18,12 +18,11 @@ class _RatingReviewPageState extends State<RatingReviewPage> {
   TextEditingController _reviewController = TextEditingController();
   bool _isFeedbackSubmitted = false;
 
-  final String apiUrl = Global.BASE_URL + "feedback";
-  final String? userId = Global.userId;
+  final String apiUrl = Global.BASE_URL + "api/feedback";
 
   Future<void> _checkFeedbackStatus() async {
     setState(() {
-      _isFeedbackSubmitted = false; // Mock check
+      _isFeedbackSubmitted = false;
     });
   }
 
@@ -38,20 +37,16 @@ class _RatingReviewPageState extends State<RatingReviewPage> {
     }
 
     String reviewText = _reviewController.text;
-
-    // Construct the payload
     var feedbackData = {
       "rating": _rating,
       "review": reviewText,
-      "user_id": userId
     };
 
     try {
-      // Make the POST request to submit feedback
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {
-          'Authorization': 'Bearer $token',
+          'token': '$token',
           'Content-Type': 'application/json',
         },
         body: json.encode(feedbackData),
@@ -59,7 +54,7 @@ class _RatingReviewPageState extends State<RatingReviewPage> {
 
       print('feedback response : ${response.body}');
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200) {
         // setState(() {
         //   _isFeedbackSubmitted = true;
         // });
@@ -70,7 +65,7 @@ class _RatingReviewPageState extends State<RatingReviewPage> {
         Navigator.pop(context);
       } else if(response.statusCode == 400){
         var responseBody = json.decode(response.body);
-        if (responseBody['message'] == 'You have already submitted feedback.') {
+        if (responseBody['msg'] == 'You have already submitted feedback.') {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("You have already submitted feedback.")),
           );

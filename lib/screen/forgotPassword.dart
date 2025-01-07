@@ -15,34 +15,33 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
-  final String forgotPasswordUrl = Global.BASE_URL + 'auth/forgotPassword';
+  final String forgotPasswordUrl = Global.BASE_URL + 'api/forgot-password';
 
   Future<void> handleForgotPassword() async {
+    print('email : ${_emailController.text}');
+    String email = _emailController.text.trim();
     try {
       final response = await http.post(
         Uri.parse(forgotPasswordUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email_id': _emailController.text}),
+        headers: {'Content-Type': 'application/json',},
+        body: jsonEncode({'email_id': email}),
       );
-
       final Map<String, dynamic> responseData = jsonDecode(response.body);
-      if (response.statusCode == 200) {
+      print('fprgot password response data ==> ${responseData}');
+      if (responseData['code'] == 200 && responseData['success'] == 1) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: Text('Success'),
-            content: Text('OTP sent successfully to your email.'),
+            content: Text('${responseData["msg"]}'),
             actions: [
               TextButton(
                 onPressed: () {
-                  // Close the dialog and navigate to the OTP verification page
-                  Navigator.pop(context); // Close the dialog
-
-                  // Navigate to the OTP Verification page
+                  Navigator.pop(context);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => OtpVerification(email: _emailController.text), // Pass the email if needed
+                      builder: (context) => OtpVerification(email: email),
                     ),
                   );
                 },
@@ -54,12 +53,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
       } else {
         // Handle error
-        print(responseData['message']);
+        print(responseData['msg']);
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: Text('Error'),
-            content: Text(responseData['message']?? 'An unknown error occurred.'),
+            content: Text(responseData['msg']?? 'An unknown error occurred.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -133,7 +132,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   ),
                   const SizedBox(height: 30),
 
-                  // Email Input Field
                   TextField(
                     controller: _emailController,
                     decoration: InputDecoration(

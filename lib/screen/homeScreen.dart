@@ -327,13 +327,12 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                       SlidableAction(
                         onPressed: (context) {
                           Helper.showRenameDialog(
-                              context, document["name"] ?? "",
+                              context,
                             document["id"],
-                                (oldFilename, newFilename) {
+                                name,
+                                (docId, newFilename) {
                               setState(() {
-                                // Find the document in the list and update it
-                                final index = vm.filterData.indexWhere(
-                                        (doc) => doc["fileName"] == oldFilename);
+                                final index = vm.filterData.indexWhere((doc) => doc["id"] == docId);
                                 if (index != -1) {
                                   vm.filterData[index]["name"] = newFilename;
                                 }
@@ -396,12 +395,11 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                               if (document['documentUrl'] != null) {
                                 Uint8List bytes = await getDocumentBytes(document['documentUrl']);
                                 Helper.showBottomSheet(context, bytes, document["id"],
-                                  document["name"] ?? "",
+                                  name,
                                     document["originalName"] ?? "",
-                                      (oldFilename, newFilename) {
+                                      (docId, newFilename) {
                                     setState(() {
-                                      final index = vm.filterData.indexWhere(
-                                              (doc) => doc["fileName"] == oldFilename);
+                                      final index = vm.filterData.indexWhere((doc) => doc["id"] == docId);
                                       if (index != -1) {
                                         vm.filterData[index]["name"] = newFilename;
                                       }

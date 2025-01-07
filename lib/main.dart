@@ -52,6 +52,7 @@ import 'comms/helper.dart';
 //     );
 //   }
 // }
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,6 +81,7 @@ class MyApp extends StatelessWidget {
                 child: MaterialApp(
                   title: "Document Manager",
                   debugShowCheckedModeBanner: false,
+                  scaffoldMessengerKey: scaffoldMessengerKey,
                   // home: MaterialApp.router(
                   //   debugShowCheckedModeBanner: false,
                   // ),

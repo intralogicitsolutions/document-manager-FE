@@ -690,7 +690,7 @@ class _LoginFormState extends State<LoginForm> {
   @override
   void initState() {
     super.initState();
-    imageFilename = widget.imageFilename; // Initialize with widget value
+    imageFilename = widget.imageFilename;
   }
 
   @override
@@ -709,96 +709,153 @@ class _LoginFormState extends State<LoginForm> {
   }
 
   Future<void> handleSignup() async {
-    try {
+
       if (mounted) {
         setState(() {
           isLoading = true;
         });
       }
-
-      String? imgUrl;
-      if (widget.image != null) {
-        // Create a request to upload the image
-        var request = http.MultipartRequest(
-          'POST',
-          Uri.parse(Global.BASE_URL + 'api/upload-document'),
-        );
-        request.files.add(await http.MultipartFile.fromPath('files', widget.image!.path));
-
-        // Send the request
+     // final url = Uri.parse(Global.BASE_URL + 'api/signup');
+      try{
+        var request = http.MultipartRequest('POST', Uri.parse(signupUrl));
+        request.fields['first_name'] = _firstNameController.text.trim();
+        request.fields['last_name'] = _lastNameController.text.trim();
+        request.fields['email_id'] = _emailController.text.trim();
+        request.fields['password'] = _passwordController.text.trim();
+        if (widget.image != null) {
+          var fileStream = http.MultipartFile.fromBytes(
+            'files',
+            await widget.image!.readAsBytes(),
+            filename: widget.image!
+                .path
+                .split('/')
+                .last,
+          );
+          request.files.add(fileStream);
+        }
 
         var response = await request.send();
-        var responseData = await http.Response.fromStream(response);
-
-        if (response.statusCode == 200) {
-          final Map<String, dynamic> imageResponse = jsonDecode(responseData.body);
-          imgUrl = imageResponse['data']['document_url']; // Get img_url from the response
-          imageFilename = imageResponse['data']['originalName'];
-          // updateImageFilename(imageResponse['data']['filename']);
-          print('image response :::::::: ${imgUrl} , ${widget.imageFilename} , ${imageResponse}');
-        } else {
-          // Handle image upload error
-          print('Image upload failed: ${responseData.body}');
-          return; // Stop the signup process if image upload fails
+        if(response.statusCode == 200){
+          var responseData = await http.Response.fromStream(response);
+          var jsonResponse = json.decode(responseData.body);
+          await handleSignin(_emailController.text, _passwordController.text);
+          Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomeTabPage()),
+                  );
+          print('Signup failed with status ${response.statusCode}: ${responseData.body}');
+          print('Response: ${jsonResponse['msg']}');
+          print('User Details: ${jsonResponse['body']}');
+        }else {
+          print('Error: ${response.reasonPhrase}');
         }
+
+      }catch(e){
+        print('Exception occurred: $e');
       }
-
-      var requestBody = {
-        'first_name': _firstNameController.text.trim(),
-        'last_name': _lastNameController.text.trim(),
-        'email_id': _emailController.text.trim(),
-        'password': _passwordController.text.trim(),
-        'image_path': imgUrl ?? '',
-      };
-
-      // Send the request as JSON
-      final response = await http.post(
-        Uri.parse(signupUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
-      );
-
-      // Handle the response
-      final Map<String, dynamic> responseJson = jsonDecode(response.body);
-
-
-      if (response.statusCode == 200) {
-        if (!mounted) return;
-
-        await handleSignin(_emailController.text, _passwordController.text);
-        print('Signup failed with status ${response.statusCode}: ${response.body}');
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      } else if (response.statusCode == 400) {
-        if (!mounted) return;
-        print('Signup failed with status ${response.statusCode}: ${response.body}');
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Signup Error'),
-            content: Text(responseJson['message']),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error during signup: $e');
-    } finally {
-      if (mounted) {
-        setState(() {
-          isLoading = false; // Hide loading indicator
-        });
-      }
-    }
   }
+
+  // Future<void> handleSignup1() async {
+  //   try {
+  //     if (mounted) {
+  //       setState(() {
+  //         isLoading = true;
+  //       });
+  //
+  //     }
+  //
+  //     String? imgUrl;
+  //     if (widget.image != null) {
+  //       // Create a request to upload the image
+  //       var request = http.MultipartRequest(
+  //         'POST',
+  //         Uri.parse(Global.BASE_URL + 'api/upload-document'),
+  //       );
+  //       request.fields['first_name'] = _firstNameController.text.trim();
+  //       request.fields['last_name'] = _lastNameController.text.trim();
+  //       request.fields['email_id'] = _emailController.text.trim();
+  //       request.fields['password'] = _passwordController.text.trim();
+  //
+  //       var fileStream = http.MultipartFile.fromBytes(
+  //         'files', // Key for the file field
+  //         await widget.image!.readAsBytes(),
+  //         filename: widget.image!.path.split('/').last,
+  //       );
+  //       request.files.add(fileStream);
+  //
+  //      // request.files.add(await http.MultipartFile.fromPath('files', widget.image!.path));
+  //
+  //       var response = await request.send();
+  //       var responseData = await http.Response.fromStream(response);
+  //
+  //       if (response.statusCode == 200) {
+  //         final Map<String, dynamic> imageResponse = jsonDecode(responseData.body);
+  //         final imagedata = imageResponse['body'][0];
+  //         imgUrl = imagedata['document_url']; // Get img_url from the response
+  //         imageFilename = imagedata['originalName'];
+  //         // updateImageFilename(imageResponse['data']['filename']);
+  //         print('image response :::::::: ${imgUrl} , ${widget.imageFilename} , ${imageResponse}');
+  //       } else {
+  //         // Handle image upload error
+  //         print('Image upload failed: ${responseData.body}');
+  //         return; // Stop the signup process if image upload fails
+  //       }
+  //     }
+  //
+  //     var requestBody = {
+  //       'first_name': _firstNameController.text.trim(),
+  //       'last_name': _lastNameController.text.trim(),
+  //       'email_id': _emailController.text.trim(),
+  //       'password': _passwordController.text.trim(),
+  //       'image_path': imgUrl ?? '',
+  //     };
+  //
+  //     // Send the request as JSON
+  //     final response = await http.post(
+  //       Uri.parse(signupUrl),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode(requestBody),
+  //     );
+  //
+  //     // Handle the response
+  //     final Map<String, dynamic> responseJson = jsonDecode(response.body);
+  //     if (response.statusCode == 200) {
+  //       if (!mounted) return;
+  //
+  //       await handleSignin(_emailController.text, _passwordController.text);
+  //       print('Signup failed with status ${response.statusCode}: ${response.body}');
+  //
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(builder: (context) => const HomeTabPage()),
+  //       );
+  //     } else if (response.statusCode == 400) {
+  //       if (!mounted) return;
+  //       print('Signup failed with status ${response.statusCode}: ${response.body}');
+  //       showDialog(
+  //         context: context,
+  //         builder: (context) => AlertDialog(
+  //           title: const Text('Signup Error'),
+  //           content: Text(responseJson['message']),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.pop(context),
+  //               child: const Text('OK'),
+  //             ),
+  //           ],
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     print('Error during signup: $e');
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() {
+  //         isLoading = false; // Hide loading indicator
+  //       });
+  //     }
+  //   }
+  // }
 
   Future<void> handleSignin(String email, String password) async {
     try {
@@ -874,7 +931,6 @@ class _LoginFormState extends State<LoginForm> {
       });
     }
   }
-
 
 
   @override
