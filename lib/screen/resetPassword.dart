@@ -44,20 +44,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           },
         ),
         elevation: 0,
-        // shape: const RoundedRectangleBorder(
-        //   borderRadius: BorderRadius.only(
-        //     bottomRight: Radius.circular(25),
-        //     bottomLeft: Radius.circular(25),
-        //   ),
-        // ),
+
         backgroundColor: Themer.gradient1,
       ),
       body: Container(
         decoration:  BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              // Color(0xFFF67DBC), // Pinkish color
-              // Color(0xFFFFC2A2), // Light orange color
               Themer.gradient1.withOpacity(0.5),
               Themer.gradient2.withOpacity(0.5)
             ],
@@ -75,10 +68,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     TextFormField(
-                      // decoration: const InputDecoration(
-                      //   labelText: 'Current Password',
-                      //   border: OutlineInputBorder(),
-                      // ),
                       decoration: InputDecoration(
                         //prefixIcon:  Icon(Icons.person, color: Themer.textColor.withOpacity(0.8)),
                         hintText: 'Current Password',
@@ -98,15 +87,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         return null;
                       },
                       onChanged: (value) {
-                        _currentPassword = value;
+                        setState(() {
+                          _currentPassword = value;
+                        });
+                       // _currentPassword = value;
                       },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
-                      // decoration: const InputDecoration(
-                      //   labelText: 'New Password',
-                      //   border: OutlineInputBorder(),
-                      // ),
                       decoration: InputDecoration(
                         //prefixIcon:  Icon(Icons.person, color: Themer.textColor.withOpacity(0.8)),
                         hintText: 'New Password',
@@ -119,9 +107,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
                       ),
                       obscureText: true,
-                      enabled: _isCurrentPasswordValid,
+                     // enabled: _isCurrentPasswordValid,
+                      enabled: _currentPassword != null && _currentPassword!.isNotEmpty,
                       validator: (value) {
-                        if (_isCurrentPasswordValid) {
+                        if (_currentPassword != null && _currentPassword!.isNotEmpty) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your new password';
                           }
@@ -129,15 +118,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         return null;
                       },
                       onChanged: (value) {
-                        _newPassword = value;
+                        setState(() {
+                          _newPassword = value;
+                        });
+                        //_newPassword = value;
                       },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
-                      // decoration: const InputDecoration(
-                      //   labelText: 'Confirm New Password',
-                      //   border: OutlineInputBorder(),
-                      // ),
                       decoration: InputDecoration(
                         //prefixIcon:  Icon(Icons.person, color: Themer.textColor.withOpacity(0.8)),
                         hintText: 'Confirm New Password',
@@ -150,9 +138,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
                       ),
                       obscureText: true,
-                      enabled: _isCurrentPasswordValid,
+                      enabled: _currentPassword != null && _currentPassword!.isNotEmpty,
                       validator: (value) {
-                        if (_isCurrentPasswordValid) {
+                        if (_currentPassword != null && _currentPassword!.isNotEmpty) {
                           if (value == null || value.isEmpty) {
                             return 'Please confirm your new password';
                           }
@@ -171,9 +159,10 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Themer.buttonColor.withOpacity(0.3),
                       ),
-                      onPressed: _isCurrentPasswordValid
-                          ? _resetPassword
-                          : _validateCurrentPassword,
+                      onPressed:
+                      // _isCurrentPasswordValid ?
+                      _resetPassword,
+                          // : _validateCurrentPassword,
                       child: const Text(
                         'Reset Password',
                         style: TextStyle(color: Colors.white),
@@ -204,16 +193,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       String? token = await TokenStorage.getToken();
       final response = await http.post(
         Uri.parse(
-            Global.BASE_URL + 'auth/reset_password'),
+            Global.BASE_URL + 'api/reset-password'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': "Bearer $token"
+          'token': "$token"
         },
         body: jsonEncode({
-          'password': _currentPassword,
-          'newPassword': ""
+          'old_password': _currentPassword,
+          'new_password': ""
         }),
       );
+      print('response : ${response.body}');
       setState(() {
         _isLoading = false;
       });
@@ -231,23 +221,64 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     }
   }
 
+  // Future<void> _resetPassword() async {
+  //   if (_isCurrentPasswordValid && _formKey.currentState!.validate()) {
+  //     setState(() {
+  //       _isLoading = true;
+  //     });
+  //     try {
+  //       String? token = await TokenStorage.getToken();
+  //       final response = await http.post(
+  //         Uri.parse(
+  //             Global.BASE_URL + 'api/reset-password'),
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //           'token': "$token"
+  //         },
+  //         body: jsonEncode({
+  //           'old_password': _currentPassword,
+  //           'new_password': _newPassword,
+  //         }),
+  //       );
+  //       final responseBody = jsonDecode(response.body);
+  //
+  //       setState(() {
+  //         _isLoading = false;
+  //       });
+  //
+  //       print('response body :: ${responseBody}');
+  //
+  //       if (response.statusCode == 200) {
+  //         CustomSnackbar.show(context, responseBody['msg']);
+  //         Navigator.pop(context);
+  //       } else {
+  //         CustomSnackbar.show(context, 'Error: ${responseBody['msg']}');
+  //       }
+  //     } catch (e) {
+  //       setState(() {
+  //         _isLoading = false;
+  //       });
+  //       CustomSnackbar.show(context, 'Error occurred. Please try again.');
+  //     }
+  //   }
+  // }
+
   Future<void> _resetPassword() async {
-    if (_isCurrentPasswordValid && _formKey.currentState!.validate()) {
+    if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
       try {
         String? token = await TokenStorage.getToken();
         final response = await http.post(
-          Uri.parse(
-              Global.BASE_URL + 'auth/reset_password'),
+          Uri.parse(Global.BASE_URL + 'api/reset-password'),
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': "Bearer $token"
+            'token': "$token"
           },
           body: jsonEncode({
-            'password': _currentPassword,
-            'newPassword': _newPassword,
+            'old_password': _currentPassword,
+            'new_password': _newPassword,
           }),
         );
         final responseBody = jsonDecode(response.body);
@@ -256,11 +287,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           _isLoading = false;
         });
 
+        print('response body :: ${responseBody}');
+
         if (response.statusCode == 200) {
-          CustomSnackbar.show(context, responseBody['message']);
+          CustomSnackbar.show(context, responseBody['msg']);
           Navigator.pop(context);
+        } else if (response.statusCode == 400) {
+          CustomSnackbar.show(context, 'Invalid current password');
         } else {
-          CustomSnackbar.show(context, 'Error: ${responseBody['message']}');
+          CustomSnackbar.show(context, 'Error: ${responseBody['msg']}');
         }
       } catch (e) {
         setState(() {
@@ -270,6 +305,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       }
     }
   }
+
 }
 
 

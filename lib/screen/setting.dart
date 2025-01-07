@@ -1,3 +1,5 @@
+import 'package:document_manager/comms/helper.dart';
+import 'package:document_manager/dialogs/deleteConfirmationDialog.dart';
 import 'package:document_manager/screen/resetPassword.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -100,10 +102,12 @@ class _SettingsPageState extends State<SettingsPage> {
           ListTile(
             title: Text('Delete Account', style: TextStyle(color: Themer.textColor,fontSize: 18),),
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => DeleteAccountPage()),
-              );
+              // showDeleteConfirmationDialog(context);
+              Helper.showDeleteConfirmationDialog(context);
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(builder: (context) => DeleteAccountPage()),
+              // );
             },
             trailing: Icon(Icons.arrow_forward_ios_outlined , color: Themer.textColor,size: 18,),
           ),

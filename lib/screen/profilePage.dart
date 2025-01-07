@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
-
+import 'package:http/http.dart' as http;
 import 'package:document_manager/global/global.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
+import '../global/tokenStorage.dart';
 import '../theme/theme.dart';
 
 
@@ -18,19 +21,117 @@ class _ProfilePageState extends State<ProfilePage> {
   TextEditingController _firstNameController = TextEditingController();
   TextEditingController _lastNameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
-  String _profilePicUrl = '';
+  String _profilePicPath  = '';
 
-  // Pick profile picture from gallery or camera
   Future<void> _pickProfilePic() async {
     final ImagePicker _picker = ImagePicker();
     final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       setState(() {
-        _profilePicUrl = pickedFile.path; // Store the path of the selected image
+        _profilePicPath = pickedFile.path; // Store the path of the selected image
       });
     }
   }
+
+  Future<File> _downloadFile(String url, String fileName) async {
+    final http.Response response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      // Save the file locally
+      final Directory tempDir = await getTemporaryDirectory();
+      final File file = File('${tempDir.path}/$fileName');
+      return file.writeAsBytes(response.bodyBytes);
+    } else {
+      throw Exception('Failed to download file');
+    }
+  }
+
+  Future<void> _saveChanges() async {
+    final url = Uri.parse(Global.BASE_URL + 'api/edit-user');
+
+    try {
+      String? token = await TokenStorage.getToken();
+      var request = http.MultipartRequest('PATCH', url);
+
+
+      request.headers['token'] = '$token';
+
+
+      request.fields['first_name'] = _firstNameController.text.trim();
+      request.fields['last_name'] = _lastNameController.text.trim();
+      request.fields['email_id'] = _emailController.text.trim();
+
+      if (_profilePicPath.isNotEmpty) {
+        if (_profilePicPath.startsWith('http')) {
+          // It's a URL, download the file first
+          final File downloadedFile = await _downloadFile(
+            _profilePicPath,
+            'profile_pic.jpg',
+          );
+          request.files.add(await http.MultipartFile.fromPath(
+            'files',
+            downloadedFile.path,
+          ));
+        } else {
+          // It's a local file path
+          request.files.add(await http.MultipartFile.fromPath(
+            'files',
+            _profilePicPath,
+          ));
+        }
+      }
+      //
+      // if (_profilePicPath.isNotEmpty) {
+      //   var profilePic = await http.MultipartFile.fromPath(
+      //     'files',
+      //     _profilePicPath,
+      //   );
+      //   request.files.add(profilePic);
+      // }
+
+
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        var responseData = await http.Response.fromStream(response);
+        var jsonResponse = json.decode(responseData.body);
+        print('response data ==> ${responseData.body}');
+
+        if (jsonResponse['success'] == 1) {
+          Global.userFirstName = jsonResponse['body']['first_name'];
+          Global.userLastName = jsonResponse['body']['last_name'];
+          Global.userEmail = jsonResponse['body']['email_id'];
+          Global.userImagePath = jsonResponse['body']['image_path'];
+
+
+
+          print('User updated successfully');
+          print('Response: ${jsonResponse['body']}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Profile updated successfully!')),
+          );
+        } else {
+
+          print('Error: ${jsonResponse['msg']}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update profile: ${jsonResponse['msg']}')),
+          );
+        }
+      } else {
+        print('HTTP Error: ${response.reasonPhrase}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Server error: ${response.reasonPhrase}')),
+        );
+      }
+    } catch (e) {
+      print('Exception: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred. Please try again.')),
+      );
+    }
+  }
+
 
   @override
   void initState() {
@@ -38,6 +139,7 @@ class _ProfilePageState extends State<ProfilePage> {
     _firstNameController.text = Global.userFirstName!;
     _lastNameController.text = Global.userLastName!;
     _emailController.text = Global.userEmail!;
+    _profilePicPath = Global.userImagePath!;
   }
 
   @override
@@ -78,11 +180,20 @@ class _ProfilePageState extends State<ProfilePage> {
                   children: [
                     CircleAvatar(
                       radius: 60,
-                      child: Icon(Icons.person,size: 40,),
-                      // backgroundImage: _profilePicUrl.isNotEmpty
-                      //     ? FileImage(File(_profilePicUrl)) // Show selected image
-                      //     : NetworkImage(''
-                    //  ), // Default profile image
+                      backgroundImage: _profilePicPath.isNotEmpty
+                          ? (_profilePicPath.startsWith('http') // Check if it's a network image
+                          ? NetworkImage(_profilePicPath)
+                          : FileImage(File(_profilePicPath)) // Otherwise, assume it's a local file
+                      ) as ImageProvider
+                          : AssetImage('assets/images/document.png'),
+                      // child: _profilePicPath.isEmpty
+                      //     ? Icon(Icons.person, size: 40) // Show icon if no image
+                      //     : null,
+                     // child: Icon(Icons.person,size: 40,),
+                     //  backgroundImage: _profilePicPath.isNotEmpty
+                     //      ? FileImage(File(_profilePicPath)) // Show selected image
+                     //      : NetworkImage(''
+                     // ), // Default profile image
                     ),
                     Positioned(
                       bottom: 0,
@@ -130,10 +241,7 @@ class _ProfilePageState extends State<ProfilePage> {
               SizedBox(height: 16),
               // Edit Button
               ElevatedButton(
-                onPressed: () {
-                  // Handle saving changes
-                  print('Saved: ${_firstNameController.text} ${_lastNameController.text} ${_emailController.text}');
-                },
+                onPressed: _saveChanges,
                 child: Text('Save Changes'),
               ),
             ],
