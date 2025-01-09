@@ -8,18 +8,18 @@ import 'package:http/http.dart' as http;
 import 'login.dart';
 
 class ChangePassword extends StatefulWidget {
-  //final String? email;
-  const ChangePassword({super.key});
+  final String userId;
+  final String token;
+  const ChangePassword({super.key, required this.token, required this.userId});
 
   @override
   State<ChangePassword> createState() => _ChangePasswordState();
 }
 
 class _ChangePasswordState extends State<ChangePassword> {
-  final _otpController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final String resetPasswordUrl = Global.BASE_URL + 'auth/resetPassword';
+  final String resetPasswordUrl = Global.BASE_URL + 'api/change-password';
 
   Future<void> handleResetPassword() async {
     if (_newPasswordController.text.isEmpty || _confirmPasswordController.text.isEmpty) {
@@ -61,10 +61,11 @@ class _ChangePasswordState extends State<ChangePassword> {
     try {
       final response = await http.post(
         Uri.parse(resetPasswordUrl),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'token': '${widget.token}',
+          'Content-Type': 'application/json'
+        },
         body: jsonEncode({
-         // 'email_id': widget.email,
-          'otp': _otpController.text,
           'new_password': _newPasswordController.text
         }),
       );
@@ -75,15 +76,17 @@ class _ChangePasswordState extends State<ChangePassword> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Success'),
-            content: const Text('Password reset successfully'),
+            title: const Text('password changed'),
+            content: const Text('you can now sign in with your new password'),
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const Login()),
-                  );
+                  Navigator.of(context, rootNavigator:
+                  true).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const Login()), (route) => false);
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(builder: (context) => const Login()),
+                  // );
                 },
                 child: const Text('OK'),
               ),
@@ -160,7 +163,7 @@ class _ChangePasswordState extends State<ChangePassword> {
 
                   // Instruction Text
                   Text(
-                    'Enter the OTP sent to your email and set a new password.',
+                    'Enter the new password and confirm password.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         color: Colors.white.withOpacity(0.8),
@@ -169,28 +172,6 @@ class _ChangePasswordState extends State<ChangePassword> {
                     ),
                   ),
                   const SizedBox(height: 30),
-
-                  // OTP Field
-                  TextField(
-                    controller: _otpController,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.lock, color: Themer.textColor.withOpacity(0.8)),
-                      hintText: 'OTP',
-                      hintStyle: TextStyle(color: Themer.textColor.withOpacity(0.8)),
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 15.0, horizontal: 16.0),
-                    ),
-                    keyboardType: TextInputType.number,
-                    style: const TextStyle(color: Themer.textColor),
-                  ),
-                  const SizedBox(height: 10),
-
-                  // New Password Field
                   TextField(
                     controller: _newPasswordController,
                     decoration: InputDecoration(
@@ -240,7 +221,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                         style: TextStyle(color: Colors.white),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Themer.buttonColor.withOpacity(0.2),
+                        backgroundColor: Themer.buttonColor.withOpacity(0.4),
                         padding: const EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
@@ -252,19 +233,19 @@ class _ChangePasswordState extends State<ChangePassword> {
                   const SizedBox(height: 20),
 
                   // Back to Login link
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context); // Return to the previous page
-                    },
-                    child: Text(
-                      'Back to Login',
-                      style: TextStyle(
-                        color: Themer.textColor,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
+                  // GestureDetector(
+                  //   onTap: () {
+                  //     Navigator.pop(context); // Return to the previous page
+                  //   },
+                  //   child: Text(
+                  //     'Back to Login',
+                  //     style: TextStyle(
+                  //       color: Themer.textColor,
+                  //       fontSize: 16,
+                  //       fontWeight: FontWeight.w500,
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -274,3 +255,5 @@ class _ChangePasswordState extends State<ChangePassword> {
     );
   }
 }
+//password changed
+//you can now sign in with your new password

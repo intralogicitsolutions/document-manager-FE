@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:document_manager/screen/login.dart';
 import 'package:flutter/material.dart';
 import '../global/global.dart';
+import '../global/tokenStorage.dart';
 import '../theme/theme.dart';
 import 'package:http/http.dart' as http;
-import 'otpVerification.dart';
+import 'changePassword.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({Key? key}) : super(key: key);
@@ -38,12 +40,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => OtpVerification(email: email),
-                    ),
-                  );
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(
+                  //     builder: (context) => const Login()
+                  //   ),
+                  // );
                 },
                 child: Text('OK'),
               ),
@@ -123,7 +125,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                   // Instruction text
                   Text(
-                    'Enter your email address to receive password reset instructions.',
+                    'Enter your email address and we will send you a password reset link.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
@@ -163,7 +165,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       //   );
                       // },
                       child: Text(
-                        'Send Reset OTP',
+                        'Send Reset Link',
                         style: TextStyle(color: Colors.white),
                       ),
                       // style: ElevatedButton.styleFrom(
@@ -220,7 +222,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 // import 'package:http/http.dart' as http;
 // import '../global/global.dart';
 // import '../theme/theme.dart';
-// import 'otpVerification.dart';
+// import 'changePassword.dart';
 //
 // class ForgotPassword extends StatefulWidget {
 //   const ForgotPassword({super.key});

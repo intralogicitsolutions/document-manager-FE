@@ -14,7 +14,7 @@ import '../global/tokenStorage.dart';
 class DashBoardViewModel extends BaseNotifier{
 
   bool searchProgress = false;
-  bool hasData = false,isLoading = true;
+  bool hasData = false,isLoading = false;
   bool isSearching = false;
 
   ScrollController? scrollController;
@@ -76,7 +76,7 @@ class DashBoardViewModel extends BaseNotifier{
 
   void updateDataPresenter(bool loading){
     isLoading = loading;
-    hasData = filterData.isNotEmpty;
+   // hasData = filterData.isNotEmpty;
     notifyListeners();
   }
 
@@ -95,6 +95,7 @@ class DashBoardViewModel extends BaseNotifier{
 
   Future<void> _uploadDocument(File file, String fileName) async {
     try {
+      updateDataPresenter(true);
       String? token = await TokenStorage.getToken();
       final dio = Dio();
       dio.options.headers['token'] = '$token';
@@ -154,6 +155,7 @@ class DashBoardViewModel extends BaseNotifier{
           SnackBar(content: Text('Failed to upload document.')),
         );
       }
+      updateDataPresenter(false);
     } catch (e) {
       print("Error uploading document: $e");
       ScaffoldMessenger.of(baseWidget.context).showSnackBar(

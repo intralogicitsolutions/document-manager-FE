@@ -3,6 +3,7 @@ import 'package:document_manager/component/snackBar.dart';
 import 'package:document_manager/screen/aboutUs.dart';
 import 'package:document_manager/screen/faqs.dart';
 import 'package:document_manager/screen/folderPage.dart';
+import 'package:document_manager/screen/login.dart';
 import 'package:document_manager/screen/privacyPolicy.dart';
 import 'package:document_manager/screen/profilePage.dart';
 import 'package:document_manager/screen/setting.dart';
@@ -213,7 +214,8 @@ Future<void> _logout(BuildContext context) async {
           TextButton(
             onPressed: () async {
               await _callLogoutApi(context);
-              Navigator.of(context).pop(); // Close the dialog
+
+              //Navigator.of(context).pop(); // Close the dialog
             },
             child: const Text('Logout'),
           ),
@@ -225,12 +227,12 @@ Future<void> _logout(BuildContext context) async {
 
 Future<void> _callLogoutApi(BuildContext context) async {
   String? token = await TokenStorage.getToken();
-  final String url = Global.BASE_URL + 'auth/logout'; // Replace with your API URL
+  final String url = Global.BASE_URL + 'api/logout'; // Replace with your API URL
   final response = await http.post(
     Uri.parse(url),
     headers: {
       'Content-Type': 'application/json',
-      "Authorization": "Bearer $token"
+      "token": "$token"
     },
   );
 
@@ -238,6 +240,14 @@ Future<void> _callLogoutApi(BuildContext context) async {
 
   if (response.statusCode == 200) {
     CustomSnackbar.show(context, 'Logout successful');
+    Future.delayed(const Duration(seconds: 2), (){
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) =>  const Login()),
+      );
+    });
+
+
   } else {
     final Map<String, dynamic> responseData = json.decode(response.body);
     CustomSnackbar.show(context, 'Error: ${responseData['message']}');

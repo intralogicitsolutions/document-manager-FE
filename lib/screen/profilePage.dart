@@ -10,8 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import '../global/tokenStorage.dart';
 import '../theme/theme.dart';
 
-
-
 class ProfilePage extends StatefulWidget {
   @override
   _ProfilePageState createState() => _ProfilePageState();
@@ -21,15 +19,17 @@ class _ProfilePageState extends State<ProfilePage> {
   TextEditingController _firstNameController = TextEditingController();
   TextEditingController _lastNameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
-  String _profilePicPath  = '';
+  String _profilePicPath = '';
 
   Future<void> _pickProfilePic() async {
     final ImagePicker _picker = ImagePicker();
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedFile =
+        await _picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       setState(() {
-        _profilePicPath = pickedFile.path; // Store the path of the selected image
+        _profilePicPath =
+            pickedFile.path; // Store the path of the selected image
       });
     }
   }
@@ -54,9 +54,7 @@ class _ProfilePageState extends State<ProfilePage> {
       String? token = await TokenStorage.getToken();
       var request = http.MultipartRequest('PATCH', url);
 
-
       request.headers['token'] = '$token';
-
 
       request.fields['first_name'] = _firstNameController.text.trim();
       request.fields['last_name'] = _lastNameController.text.trim();
@@ -90,7 +88,6 @@ class _ProfilePageState extends State<ProfilePage> {
       //   request.files.add(profilePic);
       // }
 
-
       var response = await request.send();
 
       if (response.statusCode == 200) {
@@ -104,18 +101,17 @@ class _ProfilePageState extends State<ProfilePage> {
           Global.userEmail = jsonResponse['body']['email_id'];
           Global.userImagePath = jsonResponse['body']['image_path'];
 
-
-
           print('User updated successfully');
           print('Response: ${jsonResponse['body']}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Profile updated successfully!')),
           );
-        } else {
-
+        } else if (response.statusCode == 403) {
           print('Error: ${jsonResponse['msg']}');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update profile: ${jsonResponse['msg']}')),
+            SnackBar(
+                content:
+                    Text('Failed to update profile: ${jsonResponse['msg']}')),
           );
         }
       } else {
@@ -132,14 +128,15 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-
   @override
   void initState() {
     super.initState();
     _firstNameController.text = Global.userFirstName!;
     _lastNameController.text = Global.userLastName!;
     _emailController.text = Global.userEmail!;
-    _profilePicPath = Global.userImagePath!;
+    if (Global.userImagePath != null) {
+      _profilePicPath = Global.userImagePath!;
+    }
   }
 
   @override
@@ -160,13 +157,6 @@ class _ProfilePageState extends State<ProfilePage> {
           padding: const EdgeInsets.all(8.0),
           child: Text('Profile', style: TextStyle(color: Colors.white)),
         ),
-        // centerTitle: true,
-        // leading: IconButton(onPressed: () {
-        //   Navigator.pop(context);
-        // }, icon: SvgPicture.asset(
-        //   "assets/images/ios-back-arrow.svg",
-        //   colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-        // ),),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -181,19 +171,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     CircleAvatar(
                       radius: 60,
                       backgroundImage: _profilePicPath.isNotEmpty
-                          ? (_profilePicPath.startsWith('http') // Check if it's a network image
-                          ? NetworkImage(_profilePicPath)
-                          : FileImage(File(_profilePicPath)) // Otherwise, assume it's a local file
-                      ) as ImageProvider
-                          : AssetImage('assets/images/document.png'),
-                      // child: _profilePicPath.isEmpty
-                      //     ? Icon(Icons.person, size: 40) // Show icon if no image
-                      //     : null,
-                     // child: Icon(Icons.person,size: 40,),
-                     //  backgroundImage: _profilePicPath.isNotEmpty
-                     //      ? FileImage(File(_profilePicPath)) // Show selected image
-                     //      : NetworkImage(''
-                     // ), // Default profile image
+                          ? (_profilePicPath.startsWith('http')
+                                  ? NetworkImage(_profilePicPath)
+                                  : FileImage(File(_profilePicPath)))
+                              as ImageProvider
+                          : null,
+                      child: _profilePicPath.isEmpty
+                          ? ClipOval(
+                              child: Image.asset(
+                                'assets/images/profile.png',
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          : null,
                     ),
                     Positioned(
                       bottom: 0,
@@ -202,7 +194,11 @@ class _ProfilePageState extends State<ProfilePage> {
                         radius: 18,
                         backgroundColor: Colors.black12,
                         child: IconButton(
-                          icon: Icon(Icons.edit,size: 18,color: Colors.grey.shade600,),
+                          icon: Icon(
+                            Icons.edit,
+                            size: 18,
+                            color: Colors.grey.shade600,
+                          ),
                           onPressed: _pickProfilePic,
                         ),
                       ),

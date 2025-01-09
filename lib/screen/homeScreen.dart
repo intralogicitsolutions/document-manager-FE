@@ -28,8 +28,8 @@ import 'dashboard.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool? isSearching;
-  const HomeScreen({super.key,
-    this.isSearching});
+
+  const HomeScreen({super.key, this.isSearching});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -37,10 +37,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
   late DashBoardViewModel vm;
+  bool isLoading = false;
   int selectedTab = 0;
+
   //List<NavModel> items = [];
   GlobalKey<CircularMenuState>? key;
-  bool isSearching  = false;
+  bool isSearching = false;
   String searchQuery = "";
   final TextEditingController searchController = TextEditingController();
 
@@ -51,7 +53,7 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
     NavModel(page: ProfilePage(), navKey: GlobalKey<NavigatorState>()),
   ];
 
-   PageController? _pageController;
+  PageController? _pageController;
 
   Widget buildSliderCard(String imagePath, String title) {
     return Card(
@@ -99,48 +101,52 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
     _pageController?.jumpToPage(index);
   }
 
-    Future<void> _fetchDocuments() async {
-      try {
-        String? token = await TokenStorage.getToken();
-        final dio = Dio();
-        dio.options.headers['token'] = '$token';
-        final response = await dio.get(
-          '${Global.BASE_URL}api/get-documentlist',
-        );
+  Future<void> _fetchDocuments() async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+      String? token = await TokenStorage.getToken();
+      final dio = Dio();
+      dio.options.headers['token'] = '$token';
+      final response = await dio.get(
+        '${Global.BASE_URL}api/get-documentlist',
+      );
 
-        if (response.statusCode == 200) {
-          final documents = response.data['body'] as List<dynamic>;
-          setState(() {
-            vm.documentList = documents.map((doc) {
-              return {
-                'name': doc['originalName'],
-                'type': doc['originalName'].endsWith('.pdf')
-                    ? 'pdf'
-                    : doc['originalName'].endsWith('.txt') ||
-                    doc['originalName'].endsWith('.rtf')
-                    ? 'txt'
-                    : doc['originalName'].endsWith('.docx') ||
-                    doc['originalName'].endsWith('.doc')
-                    ? 'doc'
-                    : doc['originalName'].endsWith('.PNG') ||
-                    doc['originalName'].endsWith('.jpg')
-                    ? 'img'
-                    : 'other',
-                'uploadTime': doc['created_at'],
-                'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
-                'documentUrl': doc['document_url'],
-                'originalName': doc['originalName'],
-                'id': doc["_id"],
-                //'fileName': doc["filename"],
-              };
-            }).toList();
-            vm.filterData = List.from(vm.documentList);
-          });
-        }
-      } catch (e) {
-        print("Error fetching documents: $e");
+      if (response.statusCode == 200) {
+        final documents = response.data['body'] as List<dynamic>;
+        setState(() {
+          vm.documentList = documents.map((doc) {
+            return {
+              'name': doc['originalName'],
+              'type': doc['originalName'].endsWith('.pdf')
+                  ? 'pdf'
+                  : doc['originalName'].endsWith('.txt') ||
+                          doc['originalName'].endsWith('.rtf')
+                      ? 'txt'
+                      : doc['originalName'].endsWith('.docx') ||
+                              doc['originalName'].endsWith('.doc')
+                          ? 'doc'
+                          : doc['originalName'].endsWith('.PNG') ||
+                                  doc['originalName'].endsWith('.jpg')
+                              ? 'img'
+                              : 'other',
+              'uploadTime': doc['created_at'],
+              'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
+              'documentUrl': doc['document_url'],
+              'originalName': doc['originalName'],
+              'id': doc["_id"],
+              //'fileName': doc["filename"],
+            };
+          }).toList();
+          vm.filterData = List.from(vm.documentList);
+          isLoading = false;
+        });
       }
+    } catch (e) {
+      print("Error fetching documents: $e");
     }
+  }
 
   Future<Uint8List> getDocumentBytes(String fileUrl) async {
     try {
@@ -175,19 +181,16 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
     }
   }
 
-
   @override
-  Widget buildContent(BuildContext context,  DashBoardViewModel baseNotifier) {
+  Widget buildContent(BuildContext context, DashBoardViewModel baseNotifier) {
     vm = baseNotifier;
 
     return Scaffold(
       backgroundColor: Colors.white,
-
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Slider section
             Container(
               // decoration: const BoxDecoration(
               //   gradient: LinearGradient(
@@ -202,7 +205,6 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
               height: 200,
               child: HomePageSlides(),
             ),
-            // Document wallet info
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -224,7 +226,6 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                 ],
               ),
             ),
-            // Documents you might need section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
@@ -245,13 +246,18 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        DocumentIcon(title: 'Aadhaar Card', icon: Icons.account_box),
+                        DocumentIcon(
+                            title: 'Aadhaar Card', icon: Icons.account_box),
                         SizedBox(width: 16),
-                        DocumentIcon(title: 'PAN Verification', icon: Icons.credit_card),
+                        DocumentIcon(
+                            title: 'PAN Verification', icon: Icons.credit_card),
                         SizedBox(width: 16),
-                        DocumentIcon(title: 'Vaccine Certificate', icon: Icons.verified),
+                        DocumentIcon(
+                            title: 'Vaccine Certificate', icon: Icons.verified),
                         SizedBox(width: 16),
-                        DocumentIcon(title: 'Driving License', icon: Icons.directions_car),
+                        DocumentIcon(
+                            title: 'Driving License',
+                            icon: Icons.directions_car),
                       ],
                     ),
                   ),
@@ -270,197 +276,242 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
               ),
             ),
             //SizedBox(height: 16),
-            ListView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              // itemCount: vm.filterData.length + 1,
-              itemCount: (vm.filterData.length > 5 ? 5 : vm.filterData.length) + 1,
-              itemBuilder: (context, index) {
-                // if (index == vm.filterData.length) {
-                //   return const SizedBox(height: 80);
-                // }
-                if (index == (vm.filterData.length > 5 ? 5 : vm.filterData.length)) {
-                  return const SizedBox(height: 80);
-                }
+            isLoading
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    // itemCount: vm.filterData.length + 1,
+                    itemCount:
+                        (vm.filterData.length > 5 ? 5 : vm.filterData.length) +
+                            1,
+                    itemBuilder: (context, index) {
+                      // if (index == vm.filterData.length) {
+                      //   return const SizedBox(height: 80);
+                      // }
+                      if (index ==
+                          (vm.filterData.length > 5
+                              ? 5
+                              : vm.filterData.length)) {
+                        return const SizedBox(height: 80);
+                      }
 
-                int adjustedIndex = vm.filterData.length - (vm.filterData.length > 5 ? 5 : vm.filterData.length) + index;
-                var document = vm.filterData[adjustedIndex];
-               // var document = vm.filterData[index];
+                      int adjustedIndex = vm.filterData.length -
+                          (vm.filterData.length > 5
+                              ? 5
+                              : vm.filterData.length) +
+                          index;
+                      var document = vm.filterData[adjustedIndex];
+                      // var document = vm.filterData[index];
 
-                // Skip non-matching items
-                if (vm.selectedFilter != "all" &&
-                    document["type"]?.toLowerCase() != vm.selectedFilter) {
-                  return Container();
-                }
+                      // Skip non-matching items
+                      if (vm.selectedFilter != "all" &&
+                          document["type"]?.toLowerCase() !=
+                              vm.selectedFilter) {
+                        return Container();
+                      }
 
-                // Safely access fields with null-checks
-                String name = document["name"] ?? "Unnamed Document";
-                if (name.contains("_")) {
-                  name = name.split("_").sublist(1).join("_");
-                }
-                String type = document["type"] ?? "Unknown";
-                String uploadTime = document["uploadTime"] ?? "";
-                String formattedTime = formatUploadTime(uploadTime);
-                String fileSize = document["fileSize"]?.toString() ?? "Unknown Size";
+                      // Safely access fields with null-checks
+                      String name = document["name"] ?? "Unnamed Document";
+                      if (name.contains("_")) {
+                        name = name.split("_").sublist(1).join("_");
+                      }
+                      String type = document["type"] ?? "Unknown";
+                      String uploadTime = document["uploadTime"] ?? "";
+                      String formattedTime = formatUploadTime(uploadTime);
+                      String fileSize =
+                          document["fileSize"]?.toString() ?? "Unknown Size";
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 10),
-                  child: Slidable(
-                    endActionPane: ActionPane(motion: const BehindMotion(), children: [
-                      SlidableAction(
-                        onPressed: (context) {
-                          if (document["id"] != null) {
-                            Helper.showDeleteDialog(context, document["id"],
-                                  () {
-                                setState(() {
-                                  // Remove the document from the list directly
-                                  vm.filterData.removeAt(index);
-                                });
-                              },
-                            );
-                          }
-                        },
-                        backgroundColor: Colors.red.shade300,
-                        foregroundColor: Colors.white,
-                        icon: Icons.delete,
-                      ),
-                      SlidableAction(
-                        onPressed: (context) {
-                          Helper.showRenameDialog(
-                              context,
-                            document["id"],
-                                name,
-                                (docId, newFilename) {
-                              setState(() {
-                                final index = vm.filterData.indexWhere((doc) => doc["id"] == docId);
-                                if (index != -1) {
-                                  vm.filterData[index]["name"] = newFilename;
-                                }
-                              });
-                            },
-                          );
-                        },
-                        backgroundColor: Themer.gradient1,
-                        foregroundColor: Colors.white,
-                        icon: Icons.edit,
-                      ),
-                      SlidableAction(
-                        onPressed: (context) async {
-                          if (document['documentUrl'] != null && document["originalName"] != null) {
-                            Uint8List bytes = await getDocumentBytes(document['documentUrl']);
-                            Helper.shareDocument(document["originalName"], bytes);
-                          }
-                        },
-                        backgroundColor: Colors.green.shade400,
-                        foregroundColor: Colors.white,
-                        icon: Icons.share,
-                      ),
-                    ]),
-                    child: Card(
-                      color: Colors.white,
-                      child: ListTile(
-                        leading: Icon(
-                          type == "PDF" ? Icons.picture_as_pdf : Icons.insert_drive_file,
-                          color: type == "PDF" ? Colors.red : Colors.blue,
-                          size: 40,
-                        ),
-                        title: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(name),
-                            const SizedBox(height: 5),
-                            Row(
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 4.0, horizontal: 10),
+                        child: Slidable(
+                          endActionPane: ActionPane(
+                              motion: const BehindMotion(),
                               children: [
-                                Text(
-                                  formattedTime,
-                                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
+                                SlidableAction(
+                                  onPressed: (context) {
+                                    if (document["id"] != null) {
+                                      Helper.showDeleteDialog(
+                                        context,
+                                        document["id"],
+                                        () {
+                                          setState(() {
+                                            // Remove the document from the list directly
+                                            vm.filterData.removeAt(index);
+                                          });
+                                        },
+                                      );
+                                    }
+                                  },
+                                  backgroundColor: Colors.red.shade300,
+                                  foregroundColor: Colors.white,
+                                  icon: Icons.delete,
                                 ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  fileSize,
-                                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        trailing: SizedBox(
-                          width: 30,
-                          child: IconButton(
-                            onPressed: () async {
-                              if (document['documentUrl'] != null) {
-                                Uint8List bytes = await getDocumentBytes(document['documentUrl']);
-                                Helper.showBottomSheet(context, bytes, document["id"],
-                                  name,
-                                    document["originalName"] ?? "",
+                                SlidableAction(
+                                  onPressed: (context) {
+                                    Helper.showRenameDialog(
+                                      context,
+                                      document["id"],
+                                      name,
                                       (docId, newFilename) {
-                                    setState(() {
-                                      final index = vm.filterData.indexWhere((doc) => doc["id"] == docId);
-                                      if (index != -1) {
-                                        vm.filterData[index]["name"] = newFilename;
+                                        setState(() {
+                                          final index = vm.filterData
+                                              .indexWhere(
+                                                  (doc) => doc["id"] == docId);
+                                          if (index != -1) {
+                                            vm.filterData[index]["name"] =
+                                                newFilename;
+                                          }
+                                        });
+                                      },
+                                    );
+                                  },
+                                  backgroundColor: Themer.gradient1,
+                                  foregroundColor: Colors.white,
+                                  icon: Icons.edit,
+                                ),
+                                SlidableAction(
+                                  onPressed: (context) async {
+                                    if (document['documentUrl'] != null &&
+                                        document["originalName"] != null) {
+                                      Uint8List bytes = await getDocumentBytes(
+                                          document['documentUrl']);
+                                      Helper.shareDocument(
+                                          document["originalName"], bytes);
+                                    }
+                                  },
+                                  backgroundColor: Colors.green.shade400,
+                                  foregroundColor: Colors.white,
+                                  icon: Icons.share,
+                                ),
+                              ]),
+                          child: Card(
+                            color: Colors.white,
+                            child: ListTile(
+                              leading: Icon(
+                                type == "PDF"
+                                    ? Icons.picture_as_pdf
+                                    : Icons.insert_drive_file,
+                                color: type == "PDF" ? Colors.red : Colors.blue,
+                                size: 40,
+                              ),
+                              title: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(name),
+                                  const SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        formattedTime,
+                                        style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 14),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        fileSize,
+                                        style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 14),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              trailing: SizedBox(
+                                width: 40,
+                                child: IconButton(
+                                  onPressed: () async {
+                                    if (document['documentUrl'] != null) {
+                                      Uint8List bytes = await getDocumentBytes(
+                                          document['documentUrl']);
+                                      Helper.showBottomSheet(
+                                        context,
+                                        bytes,
+                                        document["id"],
+                                        name,
+                                        document["originalName"] ?? "",
+                                        (docId, newFilename) {
+                                          setState(() {
+                                            final index = vm.filterData
+                                                .indexWhere((doc) =>
+                                                    doc["id"] == docId);
+                                            if (index != -1) {
+                                              vm.filterData[index]["name"] =
+                                                  newFilename;
+                                            }
+                                          });
+                                        },
+                                        () {
+                                          setState(() {
+                                            // Remove the document from the list directly
+                                            vm.filterData.removeAt(index);
+                                          });
+                                        },
+                                      );
+                                    }
+                                  },
+                                  icon: const Icon(Icons.more_vert),
+                                ),
+                              ),
+                              onTap: () async {
+                                try {
+                                  final url = document["documentUrl"];
+                                  final originalName = document["originalName"];
+
+                                  if (url != null && originalName != null) {
+                                    final directory =
+                                        await getTemporaryDirectory();
+                                    final filePath =
+                                        "${directory.path}/$originalName";
+
+                                    final file = File(filePath);
+                                    if (!file.existsSync()) {
+                                      final response =
+                                          await http.get(Uri.parse(url));
+                                      if (response.statusCode == 200) {
+                                        await file
+                                            .writeAsBytes(response.bodyBytes);
+                                      } else {
+                                        throw Exception(
+                                            "Failed to download file");
                                       }
-                                    });
-                                  },
-                                      () {
-                                    setState(() {
-                                      // Remove the document from the list directly
-                                      vm.filterData.removeAt(index);
-                                    });
-                                  },
-                                );
-                              }
-                            },
-                            icon: const Icon(Icons.more_vert),
+                                    }
+
+                                    final result =
+                                        await OpenFilex.open(filePath);
+                                    if (result.type != ResultType.done) {
+                                      throw Exception(
+                                          "Error opening file: ${result.message}");
+                                    }
+                                  } else {
+                                    throw Exception("Invalid file data");
+                                  }
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content:
+                                            Text("Error: ${e.toString()}")),
+                                  );
+                                }
+                              },
+                            ),
                           ),
                         ),
-                        onTap: () async {
-                          try {
-                            final url = document["documentUrl"];
-                            final originalName = document["originalName"];
-
-                            if (url != null && originalName != null) {
-                              final directory = await getTemporaryDirectory();
-                              final filePath = "${directory.path}/$originalName";
-
-                              final file = File(filePath);
-                              if (!file.existsSync()) {
-                                final response = await http.get(Uri.parse(url));
-                                if (response.statusCode == 200) {
-                                  await file.writeAsBytes(response.bodyBytes);
-                                } else {
-                                  throw Exception("Failed to download file");
-                                }
-                              }
-
-                              final result = await OpenFilex.open(filePath);
-                              if (result.type != ResultType.done) {
-                                throw Exception("Error opening file: ${result.message}");
-                              }
-                            } else {
-                              throw Exception("Invalid file data");
-                            }
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("Error: ${e.toString()}")),
-                            );
-                          }
-                        },
-                      ),
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ],
         ),
       ),
     );
   }
-
 }
 
 // Slider card widget for PageView

@@ -23,7 +23,7 @@ import '../screen/homeTabPage.dart';
 import '../screen/login.dart';
 import '../screen/notificationPage.dart';
 import '../screen/onboardingScreen.dart';
-import '../screen/otpVerification.dart';
+import '../screen/changePassword.dart';
 import '../screen/privacyPolicy.dart';
 import '../screen/profilePage.dart';
 import '../screen/resetPassword.dart';
@@ -50,7 +50,7 @@ class Helper{
     "homepage_slide": (BuildContext) => HomePageSlides(),
     "home_tab": (BuildContext) => HomeTabPage(),
     "onboarding": (BuildContext) => OnboardingScreen(),
-    "otp_verification": (BuildContext) => OtpVerification(),
+    "otp_verification": (BuildContext) => ChangePassword(token: '', userId: '',),
     "privacy_policy": (BuildContext) => PrivacyPolicyPage(),
     "setting": (BuildContext) => SettingsPage(),
   };

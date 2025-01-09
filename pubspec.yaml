@@ -39,6 +39,11 @@ dependencies:
   docx_viewer: ^0.2.1
   intl: ^0.20.1
 
+
+  #deeplinking
+  go_router: ^14.6.3
+
+
   appbase:
 
     path: C:\Users\as\StudioProjects\appbase

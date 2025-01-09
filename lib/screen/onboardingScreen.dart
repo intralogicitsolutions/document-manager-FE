@@ -1,13 +1,22 @@
+import 'package:appbase/base/base_widget.dart';
+import 'package:document_manager/screen/splashScreen.dart';
+import 'package:document_manager/viewmodel/onBoarding_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/theme.dart';
 
 class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key});
   @override
-  _OnboardingScreenState createState() => _OnboardingScreenState();
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends BaseWidget<OnboardingScreen,OnboardingViewModel> {
+  late OnboardingViewModel vm;
+
+
   final PageController _pageController = PageController();
   int _currentPage = 0;
 
@@ -30,6 +39,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ];
 
   @override
+  void onCreate() async{
+    super.onCreate();
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool hasCompletedOnboarding = prefs.getBool('hasCompletedOnboarding') ?? false;
+
+    if (hasCompletedOnboarding) {
+      // Navigate to the home screen directly
+      // vm.navigateHome();
+      GoRouter.of(context).go('/home');
+    }
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
@@ -41,8 +63,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
+
   @override
-  Widget build(BuildContext context) {
+  Widget buildContent(BuildContext context, OnboardingViewModel vm) {
+    this.vm = vm;
     return Scaffold(
       body: Column(
         children: [
@@ -77,10 +101,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {
+                  onPressed: () async{
                     if (_currentPage == _onboardingData.length - 1) {
                       // Navigate to home or main screen
-                      Navigator.pushReplacementNamed(context, '/home');
+                     // Navigator.pushReplacementNamed(context, '/home');
+                      SharedPreferences prefs = await SharedPreferences.getInstance();
+                      prefs.setBool('hasCompletedOnboarding', true);
+                      // vm.navigateHome();
+                      GoRouter.of(context).go('/home');
+
+                      // Navigator.pushReplacement(context,
+                      //     MaterialPageRoute(builder:
+                      //         (context) =>
+                      //             SplashScreen()
+                      //     )
+                      // );
                     } else {
                       _pageController.nextPage(
                         duration: Duration(milliseconds: 300),

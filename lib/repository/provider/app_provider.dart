@@ -6,6 +6,7 @@ import '../../viewmodel/dashboard_viewmodel.dart';
 import '../../viewmodel/home_tabpage_viewmodel.dart';
 import '../../viewmodel/homescreen_viewmodel.dart';
 import '../../viewmodel/notification_viewmodel.dart';
+import '../../viewmodel/onBoarding_viewmodel.dart';
 import '../../viewmodel/profile_viewmodel.dart';
 
 List<SingleChildWidget> providers = [
@@ -16,5 +17,6 @@ List<SingleChildWidget> providers = [
   ChangeNotifierProvider(create: (_) => ProfileViewModel()),
   ChangeNotifierProvider(create: (_) => ContactProfileViewModel()),
   ChangeNotifierProvider(create: (_) => HomeTabPageViewModel()),
+  ChangeNotifierProvider(create: (_) => OnboardingViewModel()),
 
 ];

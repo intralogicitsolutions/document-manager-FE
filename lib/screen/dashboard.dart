@@ -38,13 +38,11 @@ class _DashboardScreenState
   //   _fetchDocuments();
   // }
 
-
-
   @override
   void initState() {
     super.initState();
     //vm.filterData = List.from(vm.documentList);
-  //  _fetchDocuments();
+    //  _fetchDocuments();
   }
 
   Future<void> _fetchDocuments() async {
@@ -53,7 +51,7 @@ class _DashboardScreenState
       final dio = Dio();
       dio.options.headers['Authorization'] = 'Bearer $token';
       final response = await dio.get(
-        Global.BASE_URL+'documents/files/${Global.userId}',
+        Global.BASE_URL + 'documents/files/${Global.userId}',
       );
 
       if (response.statusCode == 200) {
@@ -184,352 +182,231 @@ class _DashboardScreenState
                 ),
 
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: vm.filterData.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == vm.filterData.length) {
-                        return const SizedBox(height: 80);
-                      }
+                  child: vm.isLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : ListView.builder(
+                          itemCount: vm.filterData.length + 1,
+                          itemBuilder: (context, index) {
+                            if (index == vm.filterData.length) {
+                              return const SizedBox(height: 80);
+                            }
 
-                      var document = vm.filterData[index];
+                            var document = vm.filterData[index];
 
-                      // Skip non-matching items
-                      if (vm.selectedFilter != "all" &&
-                          document["type"]?.toLowerCase() != vm.selectedFilter) {
-                        return Container();
-                      }
+                            if (vm.selectedFilter != "all" &&
+                                document["type"]?.toLowerCase() !=
+                                    vm.selectedFilter) {
+                              return Container();
+                            }
 
-                      // Safely access fields with null-checks
-                      String name = document["name"] ?? "Unnamed Document";
-                      if (name.contains("_")) {
-                        name = name.split("_").sublist(1).join("_");
-                      }
-                      String type = document["type"] ?? "Unknown";
-                      String uploadTime = document["uploadTime"] ?? "";
-                      String formattedTime = formatUploadTime(uploadTime);
-                      String fileSize = document["fileSize"]?.toString() ?? "Unknown Size";
+                            String name =
+                                document["name"] ?? "Unnamed Document";
+                            if (name.contains("_")) {
+                              name = name.split("_").sublist(1).join("_");
+                            }
+                            String type = document["type"] ?? "Unknown";
+                            String uploadTime = document["uploadTime"] ?? "";
+                            String formattedTime = formatUploadTime(uploadTime);
+                            String fileSize =
+                                document["fileSize"]?.toString() ??
+                                    "Unknown Size";
 
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 10),
-                        child: Slidable(
-                          endActionPane: ActionPane(motion: const BehindMotion(), children: [
-                            SlidableAction(
-                              onPressed: (context) {
-                                if (document["id"] != null) {
-                                  Helper.showDeleteDialog(context, document["id"],
-                                        () {
-                                      setState(() {
-                                        // Remove the document from the list directly
-                                        vm.filterData.removeAt(index);
-                                      });
-                                    },
-                                  );
-                                }
-                              },
-                              backgroundColor: Colors.red.shade300,
-                              foregroundColor: Colors.white,
-                              icon: Icons.delete,
-                            ),
-                            SlidableAction(
-                              onPressed: (context) {
-                                Helper.showRenameDialog(
-                                    context,document["id"], name ?? "",
-                                      (docId, newFilename) {
-                                    setState(() {
-                                      final index = vm.filterData.indexWhere((doc) => doc["id"] == docId);
-                                      if (index != -1) {
-                                        vm.filterData[index]["name"] = newFilename;
-                                      }
-                                    });
-                                  },
-                                );
-                              },
-                              backgroundColor: Themer.gradient1,
-                              foregroundColor: Colors.white,
-                              icon: Icons.edit,
-                            ),
-                            SlidableAction(
-                              onPressed: (context) async {
-                                if (document['documentUrl'] != null && document["originalName"] != null) {
-                                  Uint8List bytes = await getDocumentBytes(document['documentUrl']);
-                                  Helper.shareDocument(document["originalName"], bytes);
-                                }
-                              },
-                              backgroundColor: Colors.green.shade400,
-                              foregroundColor: Colors.white,
-                              icon: Icons.share,
-                            ),
-                          ]),
-                          child: Card(
-                            child: ListTile(
-                              leading: Icon(
-                                type == "PDF" ? Icons.picture_as_pdf : Icons.insert_drive_file,
-                                color: type == "PDF" ? Colors.red : Colors.blue,
-                                size: 40,
-                              ),
-                              title: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(name),
-                                  const SizedBox(height: 5),
-                                  Row(
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 4.0, horizontal: 10),
+                              child: Slidable(
+                                endActionPane: ActionPane(
+                                    motion: const BehindMotion(),
                                     children: [
-                                      Text(
-                                        formattedTime,
-                                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
+                                      SlidableAction(
+                                        onPressed: (context) {
+                                          if (document["id"] != null) {
+                                            Helper.showDeleteDialog(
+                                              context,
+                                              document["id"],
+                                              () {
+                                                setState(() {
+                                                  // Remove the document from the list directly
+                                                  vm.filterData.removeAt(index);
+                                                });
+                                              },
+                                            );
+                                          }
+                                        },
+                                        backgroundColor: Colors.red.shade300,
+                                        foregroundColor: Colors.white,
+                                        icon: Icons.delete,
                                       ),
-                                      const SizedBox(width: 12),
-                                      Text(
-                                        fileSize,
-                                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              trailing: SizedBox(
-                                width: 30,
-                                child: IconButton(
-                                  onPressed: () async {
-                                    if (document['documentUrl'] != null) {
-                                      Uint8List bytes = await getDocumentBytes(document['documentUrl']);
-                                      Helper.showBottomSheet(context, bytes, document["id"],
-                                          name,
-                                          document["originalName"] ?? "",
+                                      SlidableAction(
+                                        onPressed: (context) {
+                                          Helper.showRenameDialog(
+                                            context,
+                                            document["id"],
+                                            name ?? "",
                                             (docId, newFilename) {
-                                          setState(() {
-                                            // Find the document in the list and update it
-                                            final index = vm.filterData.indexWhere((doc) => doc["id"] == docId);
-                                            if (index != -1) {
-                                              vm.filterData[index]["name"] = newFilename;
+                                              setState(() {
+                                                final index = vm.filterData
+                                                    .indexWhere((doc) =>
+                                                        doc["id"] == docId);
+                                                if (index != -1) {
+                                                  vm.filterData[index]["name"] =
+                                                      newFilename;
+                                                }
+                                              });
+                                            },
+                                          );
+                                        },
+                                        backgroundColor: Themer.gradient1,
+                                        foregroundColor: Colors.white,
+                                        icon: Icons.edit,
+                                      ),
+                                      SlidableAction(
+                                        onPressed: (context) async {
+                                          if (document['documentUrl'] != null &&
+                                              document["originalName"] !=
+                                                  null) {
+                                            Uint8List bytes =
+                                                await getDocumentBytes(
+                                                    document['documentUrl']);
+                                            Helper.shareDocument(
+                                                document["originalName"],
+                                                bytes);
+                                          }
+                                        },
+                                        backgroundColor: Colors.green.shade400,
+                                        foregroundColor: Colors.white,
+                                        icon: Icons.share,
+                                      ),
+                                    ]),
+                                child: Card(
+                                  child: ListTile(
+                                    leading: Icon(
+                                      type == "PDF"
+                                          ? Icons.picture_as_pdf
+                                          : Icons.insert_drive_file,
+                                      color: type == "PDF"
+                                          ? Colors.red
+                                          : Colors.blue,
+                                      size: 40,
+                                    ),
+                                    title: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(name),
+                                        const SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              formattedTime,
+                                              style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 14),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Text(
+                                              fileSize,
+                                              style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 14),
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    trailing: SizedBox(
+                                      width: 40,
+                                      child: IconButton(
+                                        onPressed: () async {
+                                          if (document['documentUrl'] != null) {
+                                            Uint8List bytes =
+                                                await getDocumentBytes(
+                                                    document['documentUrl']);
+                                            Helper.showBottomSheet(
+                                              context,
+                                              bytes,
+                                              document["id"],
+                                              name,
+                                              document["originalName"] ?? "",
+                                              (docId, newFilename) {
+                                                setState(() {
+                                                  // Find the document in the list and update it
+                                                  final index = vm.filterData
+                                                      .indexWhere((doc) =>
+                                                          doc["id"] == docId);
+                                                  if (index != -1) {
+                                                    vm.filterData[index]
+                                                        ["name"] = newFilename;
+                                                  }
+                                                });
+                                              },
+                                              () {
+                                                setState(() {
+                                                  // Remove the document from the list directly
+                                                  vm.filterData.removeAt(index);
+                                                });
+                                              },
+                                            );
+                                          }
+                                        },
+                                        icon: const Icon(Icons.more_vert),
+                                      ),
+                                    ),
+                                    onTap: () async {
+                                      try {
+                                        final url = document["documentUrl"];
+                                        final originalName =
+                                            document["originalName"];
+
+                                        if (url != null &&
+                                            originalName != null) {
+                                          final directory =
+                                              await getTemporaryDirectory();
+                                          final filePath =
+                                              "${directory.path}/$originalName";
+
+                                          final file = File(filePath);
+                                          if (!file.existsSync()) {
+                                            final response =
+                                                await http.get(Uri.parse(url));
+                                            if (response.statusCode == 200) {
+                                              await file.writeAsBytes(
+                                                  response.bodyBytes);
+                                            } else {
+                                              throw Exception(
+                                                  "Failed to download file");
                                             }
-                                          });
-                                        },
-                                            () {
-                                          setState(() {
-                                            // Remove the document from the list directly
-                                            vm.filterData.removeAt(index);
-                                          });
-                                        },
-                                      );
-                                    }
-                                  },
-                                  icon: const Icon(Icons.more_vert),
+                                          }
+
+                                          final result =
+                                              await OpenFilex.open(filePath);
+                                          if (result.type != ResultType.done) {
+                                            throw Exception(
+                                                "Error opening file: ${result.message}");
+                                          }
+                                        } else {
+                                          throw Exception("Invalid file data");
+                                        }
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  "Error: ${e.toString()}")),
+                                        );
+                                      }
+                                    },
+                                  ),
                                 ),
                               ),
-                              onTap: () async {
-                                try {
-                                  final url = document["documentUrl"];
-                                  final originalName = document["originalName"];
-
-                                  if (url != null && originalName != null) {
-                                    final directory = await getTemporaryDirectory();
-                                    final filePath = "${directory.path}/$originalName";
-
-                                    final file = File(filePath);
-                                    if (!file.existsSync()) {
-                                      final response = await http.get(Uri.parse(url));
-                                      if (response.statusCode == 200) {
-                                        await file.writeAsBytes(response.bodyBytes);
-                                      } else {
-                                        throw Exception("Failed to download file");
-                                      }
-                                    }
-
-                                    final result = await OpenFilex.open(filePath);
-                                    if (result.type != ResultType.done) {
-                                      throw Exception("Error opening file: ${result.message}");
-                                    }
-                                  } else {
-                                    throw Exception("Invalid file data");
-                                  }
-                                } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text("Error: ${e.toString()}")),
-                                  );
-                                }
-                              },
-                            ),
-                          ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 )
-
-
-                // Expanded(
-                //   child: ListView.builder(
-                //     itemCount: vm.filterData.length + 1,
-                //     // Add 1 to include the SizedBox
-                //     itemBuilder: (context, index) {
-                //       // Check if the current index is the additional one (after the last item)
-                //       if (index == vm.filterData.length) {
-                //         return SizedBox(
-                //             height: 80); // Space after the last list item
-                //       }
-                //
-                //       var document = vm.filterData[index];
-                //
-                //       // Skip non-matching items
-                //       if (vm.selectedFilter != "all" &&
-                //           document["type"]!.toLowerCase() !=
-                //               vm.selectedFilter) {
-                //         return Container();
-                //       }
-                //       String uploadTime = document["uploadTime"];
-                //       String formattedTime = formatUploadTime(uploadTime);
-                //
-                //       // Return List Item
-                //       return Padding(
-                //         padding: const EdgeInsets.symmetric(
-                //             vertical: 4.0, horizontal: 10),
-                //         child: Slidable(
-                //           endActionPane:
-                //               ActionPane(motion: BehindMotion(), children: [
-                //             SlidableAction(
-                //               onPressed: (context) {
-                //                 print('all document data ==> ${document}');
-                //                 print('document id ==> ${document["id"]}');
-                //                 Helper.showDeleteDialog(
-                //                     context, document["id"]);
-                //               },
-                //               backgroundColor: Colors.red.shade300,
-                //               foregroundColor: Colors.white,
-                //               icon: Icons.delete,
-                //             ),
-                //             SlidableAction(
-                //               onPressed: (context) {
-                //                 Helper.showRenameDialog(
-                //                     context,
-                //                     document["fileName"],
-                //                     document["originalName"]);
-                //               },
-                //               backgroundColor: Themer.gradient1,
-                //               foregroundColor: Colors.white,
-                //               icon: Icons.edit,
-                //             ),
-                //             SlidableAction(
-                //               onPressed: (context) async {
-                //                 print('document data ==> ${document}');
-                //                 Uint8List bytes = await getDocumentBytes(
-                //                     document['documentUrl']);
-                //                 Helper.shareDocument(
-                //                     document["originalName"], bytes);
-                //               },
-                //               backgroundColor: Colors.green.shade400,
-                //               foregroundColor: Colors.white,
-                //               icon: Icons.share,
-                //             ),
-                //           ]),
-                //           child: Card(
-                //             child: ListTile(
-                //               leading: Icon(
-                //                 document["type"] == "PDF"
-                //                     ? Icons.picture_as_pdf
-                //                     : Icons.insert_drive_file,
-                //                 color: document["type"] == "PDF"
-                //                     ? Colors.red
-                //                     : Colors.blue,
-                //                 size: 40,
-                //               ),
-                //               title: Column(
-                //                 crossAxisAlignment: CrossAxisAlignment.start,
-                //                 children: [
-                //                   Text(document["name"]!),
-                //                   const SizedBox(height: 5),
-                //                   Row(
-                //                     children: [
-                //                       Text(
-                //                         formattedTime,
-                //                         style: TextStyle(
-                //                             color: Colors.grey[600],
-                //                             fontSize: 14),
-                //                         overflow: TextOverflow.ellipsis,
-                //                         maxLines: 1,
-                //                       ),
-                //                       const SizedBox(width: 12),
-                //                       Text(
-                //                         "${document["fileSize"]}",
-                //                         style: TextStyle(
-                //                             color: Colors.grey[600],
-                //                             fontSize: 14),
-                //                         overflow: TextOverflow.ellipsis,
-                //                         maxLines: 1,
-                //                       ),
-                //                     ],
-                //                   ),
-                //                 ],
-                //               ),
-                //               trailing: SizedBox(
-                //                 width: 30,
-                //                 child: IconButton(
-                //                   onPressed: () async {
-                //                     Uint8List bytes = await getDocumentBytes(
-                //                         document['documentUrl']);
-                //                     Helper.showBottomSheet(context, bytes, document["id"], document["fileName"],
-                //                         document["originalName"] );
-                //                   },
-                //                   icon: Icon(Icons.more_vert),
-                //                 ),
-                //               ),
-                //               onTap: () async {
-                //                 print('enter gesture detector');
-                //                 print("Document: ${document}");
-                //                 try {
-                //                   final url = document["documentUrl"];
-                //                   final originalName = document["originalName"];
-                //                   print('original name ==> ${originalName}');
-                //                   print('document url ==> ${url}');
-                //
-                //                   // Get the temporary directory
-                //                   final directory =
-                //                       await getTemporaryDirectory();
-                //                   final filePath =
-                //                       "${directory.path}/$originalName";
-                //                   print('file path ==> ${filePath}');
-                //
-                //                   // Check if the file already exists
-                //                   final file = File(filePath);
-                //                   if (!file.existsSync()) {
-                //                     // Download the file
-                //                     final response =
-                //                         await http.get(Uri.parse(url));
-                //                     if (response.statusCode == 200) {
-                //                       await file
-                //                           .writeAsBytes(response.bodyBytes);
-                //                     } else {
-                //                       throw Exception(
-                //                           "Failed to download file");
-                //                     }
-                //                   }
-                //
-                //                   // Open the file using open_filex
-                //                   final result = await OpenFilex.open(filePath);
-                //                   if (result.type != ResultType.done) {
-                //                     throw Exception(
-                //                         "Error opening file: ${result.message}");
-                //                   }
-                //                 } catch (e) {
-                //                   // Handle errors gracefully
-                //                   ScaffoldMessenger.of(context).showSnackBar(
-                //                     SnackBar(
-                //                         content:
-                //                             Text("Error: ${e.toString()}")),
-                //                   );
-                //                 }
-                //               },
-                //             ),
-                //           ),
-                //         ),
-                //       );
-                //     },
-                //   ),
-                // )
               ],
             ),
           ),
