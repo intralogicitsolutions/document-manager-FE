@@ -27,8 +27,6 @@ void main() {
   InitializeApp().initialLizeApp(const MyApp());
 }
 
-
-
 final GoRouter _router = GoRouter(
   routes: [
 
@@ -92,12 +90,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver  {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      handleInitialUri(); // Handle when app comes back to the foreground
+      handleInitialUri();
     }
   }
 
   Future<void> handleInitialUri() async {
-    final initialUri = await Uri.base; // Gets the initial deep link
+    final initialUri = await Uri.base;
     if (initialUri != null) {
       _handleUri(initialUri);
     }

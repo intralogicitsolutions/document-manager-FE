@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -55,7 +56,7 @@ class Helper{
     "setting": (BuildContext) => SettingsPage(),
   };
 
-  static  void showBottomSheet(BuildContext context, Uint8List bytes, String? docId, String? name, String? currentFilename,
+  static  void showBottomSheet(BuildContext context, Uint8List bytes, String? docId, String? name,
       Function(String oldFilename, String newFilename) onRenameSuccess,
       VoidCallback onDeleteSuccess,
       ) {
@@ -101,7 +102,7 @@ class Helper{
               title: Text('Share'),
               onTap: () {
                 Navigator.pop(context); // Close the bottom sheet
-                shareDocument(currentFilename, bytes);
+                shareDocument(name, bytes);
               },
             ),
           ],
@@ -248,6 +249,16 @@ class Helper{
        String? currentFilename,
       Function(String docId, String newFilename) onRenameSuccess
       ) {
+    if (currentFilename == null || !currentFilename.contains('.')) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Invalid file name'),
+      ));
+      return;
+    }
+
+    String extension = currentFilename.substring(currentFilename.lastIndexOf('.'));
+    String nameWithoutExtension = currentFilename.substring(0, currentFilename.lastIndexOf('.'));
+
     TextEditingController _controller = TextEditingController(text: currentFilename);
 
     showDialog(
@@ -258,17 +269,28 @@ class Helper{
           content: TextField(
             controller: _controller,
             decoration: InputDecoration(labelText: 'Enter new name'),
+            inputFormatters: [
+              TextInputFormatter.withFunction((oldValue, newValue) {
+                if (newValue.text.endsWith(extension)) {
+                  String newNamePart = newValue.text.substring(0, newValue.text.lastIndexOf(extension));
+                  if (newNamePart.contains('.') || newNamePart.isEmpty) {
+                    return oldValue;
+                  }
+                  return newValue;
+                }
+                return oldValue;
+              }),
+            ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
               child: Text('Cancel'),
             ),
             TextButton(
               onPressed: () {
-               // Navigator.pop(context); // Close the dialog
                 String newName = _controller.text.trim();
                 if(newName.isNotEmpty){
                   Navigator.pop(context);
@@ -294,11 +316,6 @@ class Helper{
     final tempFile = File('${tempDir.path}/$originalName');
     await tempFile.writeAsBytes(bytes);
      final XFile xFile = XFile(tempFile.path);
-
-    // // Get the file path (this is just an example, update it to your actual file path)
-    // String filePath = '/path/to/your/document.pdf';  // Replace with your document's path
-
-    // Share the file using share_plus
     try {
       if (Platform.isAndroid) {
         await Share.shareXFiles([xFile], text: 'Check out this document!');

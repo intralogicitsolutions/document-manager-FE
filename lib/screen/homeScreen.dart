@@ -130,13 +130,15 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                           : doc['originalName'].endsWith('.PNG') ||
                                   doc['originalName'].endsWith('.jpg')
                               ? 'img'
-                              : 'other',
+                              : doc['originalName'].endsWith('.pptx') ||
+                                      doc['originalName'].endsWith('.ppt')
+                                  ? 'ppt'
+                                  : 'other',
               'uploadTime': doc['created_at'],
               'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
               'documentUrl': doc['document_url'],
               'originalName': doc['originalName'],
               'id': doc["_id"],
-              //'fileName': doc["filename"],
             };
           }).toList();
           vm.filterData = List.from(vm.documentList);
@@ -150,12 +152,8 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
 
   Future<Uint8List> getDocumentBytes(String fileUrl) async {
     try {
-      // Make an HTTP GET request to fetch the document from the URL
       final response = await http.get(Uri.parse(fileUrl));
-
-      // Check if the response is successful
       if (response.statusCode == 200) {
-        // Return the document as bytes
         return response.bodyBytes;
       } else {
         throw Exception("Failed to load document");
@@ -168,15 +166,12 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
 
   String formatUploadTime(String timestamp) {
     try {
-      // Parse the timestamp string
       DateTime parsedDate = DateTime.parse(timestamp);
 
-      // Format to dd-MM-yy
       String formattedDate = DateFormat('dd-MM-yy').format(parsedDate);
 
       return formattedDate;
     } catch (e) {
-      // Handle parsing errors if needed
       return "Invalid date";
     }
   }
@@ -192,16 +187,6 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              // decoration: const BoxDecoration(
-              //   gradient: LinearGradient(
-              //     colors: [
-              //       Themer.gradient1,
-              //       Themer.gradient2
-              //     ],
-              //     begin: Alignment.topLeft,
-              //     end: Alignment.bottomRight,
-              //   ),
-              // ),
               height: 200,
               child: HomePageSlides(),
             ),
@@ -286,32 +271,31 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                         (vm.filterData.length > 5 ? 5 : vm.filterData.length) +
                             1,
                     itemBuilder: (context, index) {
-                      // if (index == vm.filterData.length) {
-                      //   return const SizedBox(height: 80);
-                      // }
+
                       if (index ==
                           (vm.filterData.length > 5
                               ? 5
                               : vm.filterData.length)) {
                         return const SizedBox(height: 80);
                       }
+                      var reversedData = vm.filterData.reversed.toList();
 
-                      int adjustedIndex = vm.filterData.length -
-                          (vm.filterData.length > 5
-                              ? 5
-                              : vm.filterData.length) +
-                          index;
-                      var document = vm.filterData[adjustedIndex];
-                      // var document = vm.filterData[index];
+                      // int adjustedIndex = vm.filterData.length -
+                      //     (vm.filterData.length < 5
+                      //         ? 5
+                      //         : vm.filterData.length) +
+                      //     index;
+                     // var document = reversedData[adjustedIndex];
+                      var document = reversedData[index];
 
-                      // Skip non-matching items
+                      // var document = vm.filterData[adjustedIndex];
+
                       if (vm.selectedFilter != "all" &&
                           document["type"]?.toLowerCase() !=
                               vm.selectedFilter) {
                         return Container();
                       }
 
-                      // Safely access fields with null-checks
                       String name = document["name"] ?? "Unnamed Document";
                       if (name.contains("_")) {
                         name = name.split("_").sublist(1).join("_");
@@ -337,7 +321,6 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                                         document["id"],
                                         () {
                                           setState(() {
-                                            // Remove the document from the list directly
                                             vm.filterData.removeAt(index);
                                           });
                                         },
@@ -378,7 +361,9 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                                       Uint8List bytes = await getDocumentBytes(
                                           document['documentUrl']);
                                       Helper.shareDocument(
-                                          document["originalName"], bytes);
+                                        name,
+                                         // document["originalName"],
+                                          bytes);
                                     }
                                   },
                                   backgroundColor: Colors.green.shade400,
@@ -389,12 +374,23 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                           child: Card(
                             color: Colors.white,
                             child: ListTile(
-                              leading: Icon(
-                                type == "PDF"
-                                    ? Icons.picture_as_pdf
-                                    : Icons.insert_drive_file,
-                                color: type == "PDF" ? Colors.red : Colors.blue,
-                                size: 40,
+                              leading: Image.asset(
+                                document["type"]?.toLowerCase() == "pdf"
+                                    ? 'assets/icons/pdf.png'
+                                    : document["type"]?.toLowerCase() == "img"
+                                        ? 'assets/icons/jpg.png'
+                                        : document["type"]?.toLowerCase() ==
+                                                "doc"
+                                            ? 'assets/icons/doc.png'
+                                            : document["type"]?.toLowerCase() ==
+                                                    "txt"
+                                                ? 'assets/icons/txt.png'
+                                                : document["type"]
+                                                            ?.toLowerCase() ==
+                                                        "ppt"
+                                                    ? 'assets/icons/ppt.png'
+                                                    : 'assets/icons/other.png',
+                                height: 30,
                               ),
                               title: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -436,7 +432,7 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                                         bytes,
                                         document["id"],
                                         name,
-                                        document["originalName"] ?? "",
+                                        // document["originalName"] ?? "",
                                         (docId, newFilename) {
                                           setState(() {
                                             final index = vm.filterData
@@ -463,7 +459,8 @@ class _HomeScreenState extends BaseWidget<HomeScreen, DashBoardViewModel> {
                               onTap: () async {
                                 try {
                                   final url = document["documentUrl"];
-                                  final originalName = document["originalName"];
+                                  //final originalName = document["originalName"];
+                                  final originalName = name;
 
                                   if (url != null && originalName != null) {
                                     final directory =
@@ -542,43 +539,6 @@ class SliderCard extends StatelessWidget {
   }
 }
 
-// Widget for displaying document statistics
-class InfoCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-
-  const InfoCard({required this.title, required this.subtitle});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Themer.gradient1,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: TextStyle(color: Colors.grey[700]),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Widget for displaying document icons
 class DocumentIcon extends StatelessWidget {
   final String title;
   final IconData icon;

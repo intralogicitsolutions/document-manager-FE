@@ -31,14 +31,6 @@ class _DashboardScreenState
   //Uint8List bytes = await getDocumentBytes();
 
   @override
-  // void onCreate() {
-  //   super.onCreate();
-  //   vm.init();
-  //   //vm.fetchDocuments();
-  //   _fetchDocuments();
-  // }
-
-  @override
   void initState() {
     super.initState();
     //vm.filterData = List.from(vm.documentList);
@@ -71,7 +63,10 @@ class _DashboardScreenState
                           : doc['filename'].endsWith('.PNG') ||
                                   doc['filename'].endsWith('.jpg')
                               ? 'img'
-                              : 'other',
+                              : doc['filename'].endsWith('.pptx') ||
+                                      doc['filename'].endsWith('.ppt')
+                                  ? 'ppt'
+                                  : 'other',
               'uploadTime': doc['createdAt'],
               'fileSize': '${(doc['size'] / 1024).toStringAsFixed(2)} KB',
               'documentUrl': doc['document_url'],
@@ -90,12 +85,8 @@ class _DashboardScreenState
 
   Future<Uint8List> getDocumentBytes(String fileUrl) async {
     try {
-      // Make an HTTP GET request to fetch the document from the URL
       final response = await http.get(Uri.parse(fileUrl));
-
-      // Check if the response is successful
       if (response.statusCode == 200) {
-        // Return the document as bytes
         return response.bodyBytes;
       } else {
         throw Exception("Failed to load document");
@@ -108,15 +99,11 @@ class _DashboardScreenState
 
   String formatUploadTime(String timestamp) {
     try {
-      // Parse the timestamp string
       DateTime parsedDate = DateTime.parse(timestamp);
-
-      // Format to dd-MM-yy
       String formattedDate = DateFormat('dd-MM-yy').format(parsedDate);
 
       return formattedDate;
     } catch (e) {
-      // Handle parsing errors if needed
       return "Invalid date";
     }
   }
@@ -132,8 +119,6 @@ class _DashboardScreenState
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  // Color(0xFFF67DBC), // Pinkish color
-                  // Color(0xFFFFC2A2), // Light orange color
                   Themer.gradient1.withOpacity(0.5),
                   Themer.gradient2.withOpacity(0.5)
                 ],
@@ -151,7 +136,15 @@ class _DashboardScreenState
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       //children: ["all", "pdf", "doc", "img", "ppt", "txt"]
-                      children: ["all", "pdf", "doc", "txt", "img", "other"]
+                      children: [
+                        "all",
+                        "pdf",
+                        "doc",
+                        "txt",
+                        "img",
+                        "ppt",
+                        "other"
+                      ]
                           .map((filter) => Padding(
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 4.0),
@@ -185,13 +178,19 @@ class _DashboardScreenState
                   child: vm.isLoading
                       ? Center(child: CircularProgressIndicator())
                       : ListView.builder(
+                          // reverse: true,
+                          shrinkWrap: true,
+                          physics: ClampingScrollPhysics(),
+                         // controller: vm.scrollController,
                           itemCount: vm.filterData.length + 1,
                           itemBuilder: (context, index) {
                             if (index == vm.filterData.length) {
                               return const SizedBox(height: 80);
                             }
+                            var reversedData = vm.filterData.reversed.toList();
+                            var document = reversedData[index];
 
-                            var document = vm.filterData[index];
+                           // var document = vm.filterData[index];
 
                             if (vm.selectedFilter != "all" &&
                                 document["type"]?.toLowerCase() !=
@@ -226,7 +225,6 @@ class _DashboardScreenState
                                               document["id"],
                                               () {
                                                 setState(() {
-                                                  // Remove the document from the list directly
                                                   vm.filterData.removeAt(index);
                                                 });
                                               },
@@ -269,7 +267,8 @@ class _DashboardScreenState
                                                 await getDocumentBytes(
                                                     document['documentUrl']);
                                             Helper.shareDocument(
-                                                document["originalName"],
+                                                name,
+                                                //document["originalName"],
                                                 bytes);
                                           }
                                         },
@@ -280,14 +279,27 @@ class _DashboardScreenState
                                     ]),
                                 child: Card(
                                   child: ListTile(
-                                    leading: Icon(
-                                      type == "PDF"
-                                          ? Icons.picture_as_pdf
-                                          : Icons.insert_drive_file,
-                                      color: type == "PDF"
-                                          ? Colors.red
-                                          : Colors.blue,
-                                      size: 40,
+                                    //leading: ImageIcon( AssetImage('assets/icons/pdf.png'),),
+                                    leading: Image.asset(
+                                      document["type"]?.toLowerCase() == "pdf"
+                                          ? 'assets/icons/pdf.png'
+                                          : document["type"]?.toLowerCase() ==
+                                                  "img"
+                                              ? 'assets/icons/jpg.png'
+                                              : document["type"]
+                                                          ?.toLowerCase() ==
+                                                      "doc"
+                                                  ? 'assets/icons/doc.png'
+                                                  : document["type"]
+                                                              ?.toLowerCase() ==
+                                                          "txt"
+                                                      ? 'assets/icons/txt.png'
+                                                      : document["type"]
+                                                                  ?.toLowerCase() ==
+                                                              "ppt"
+                                                          ? 'assets/icons/pptx.png'
+                                                          : 'assets/icons/other.png',
+                                      height: 30,
                                     ),
                                     title: Column(
                                       crossAxisAlignment:
@@ -331,7 +343,7 @@ class _DashboardScreenState
                                               bytes,
                                               document["id"],
                                               name,
-                                              document["originalName"] ?? "",
+                                              // document["originalName"] ?? "",
                                               (docId, newFilename) {
                                                 setState(() {
                                                   // Find the document in the list and update it
@@ -346,7 +358,6 @@ class _DashboardScreenState
                                               },
                                               () {
                                                 setState(() {
-                                                  // Remove the document from the list directly
                                                   vm.filterData.removeAt(index);
                                                 });
                                               },
@@ -359,20 +370,22 @@ class _DashboardScreenState
                                     onTap: () async {
                                       try {
                                         final url = document["documentUrl"];
-                                        final originalName =
-                                            document["originalName"];
-
+                                        final originalName = name;
+                                        print(
+                                            'document url ==> ${url} , originalname ==> ${originalName}');
                                         if (url != null &&
                                             originalName != null) {
                                           final directory =
                                               await getTemporaryDirectory();
                                           final filePath =
                                               "${directory.path}/$originalName";
-
+                                          print('file path ==> ${filePath}');
                                           final file = File(filePath);
                                           if (!file.existsSync()) {
                                             final response =
                                                 await http.get(Uri.parse(url));
+                                            print(
+                                                'document response ==> ${response}');
                                             if (response.statusCode == 200) {
                                               await file.writeAsBytes(
                                                   response.bodyBytes);
@@ -381,9 +394,10 @@ class _DashboardScreenState
                                                   "Failed to download file");
                                             }
                                           }
-
                                           final result =
                                               await OpenFilex.open(filePath);
+                                          print(
+                                              'result type ==> ${result.type}');
                                           if (result.type != ResultType.done) {
                                             throw Exception(
                                                 "Error opening file: ${result.message}");
@@ -392,6 +406,7 @@ class _DashboardScreenState
                                           throw Exception("Invalid file data");
                                         }
                                       } catch (e) {
+                                        print('Error is : ${e.toString()}');
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           SnackBar(

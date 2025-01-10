@@ -221,16 +221,17 @@ class DashBoardViewModel extends BaseNotifier{
           doc['name']!.toLowerCase().contains(searchQuery.toLowerCase());
       return matchesType && matchesQuery;
     }).toList();
+    notifyListeners();
   }
 
   void sortDocuments(){
     if(selectedSortOption == "A-Z"){
       filterData.sort((a,b)=>
-          a["name"]!.toLowerCase().compareTo(b["name"]!.toLowerCase()));
+          b["name"]!.toLowerCase().compareTo(a["name"]!.toLowerCase()));
     }
     else if (selectedSortOption == "Z-A") {
       filterData.sort((a, b) =>
-          b["name"]!.toLowerCase().compareTo(a["name"]!.toLowerCase()));
+          a["name"]!.toLowerCase().compareTo(b["name"]!.toLowerCase()));
     } else if (selectedSortOption == "Type") {
       filterData.sort((a, b) =>
           a["type"]!.toLowerCase().compareTo(b["type"]!.toLowerCase()));

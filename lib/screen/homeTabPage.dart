@@ -132,7 +132,7 @@ class _HomeTabPageState extends BaseWidget<HomeTabPage, DashBoardViewModel>
               onSearchChanged: vm.doSearch,
               isSearching: vm.isSearching,
               onSearchToggle: vm.toggleSearch,
-              showSortOptions: vm.showSortOptions,
+              showSortOptions: selectedTab == 1 ? vm.showSortOptions : null,
               searchController: vm.searchController,
               shortingList: selectedTab == 1 ? true : false)
           : null,

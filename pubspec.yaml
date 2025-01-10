@@ -48,8 +48,6 @@ dependencies:
 
     path: C:\Users\as\StudioProjects\appbase
 
-#  appbase:
-#    path: D:\Flutter-Project\plugin\appbase
 
 dev_dependencies:
   flutter_test:
@@ -77,6 +75,7 @@ flutter:
   assets:
     - assets/images/
     - assets/slide/
+    - assets/icons/
     - assets/animation/no_data.json
 
   # To add assets to your application, add an assets section, like this:
